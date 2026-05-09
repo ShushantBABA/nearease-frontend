@@ -61,7 +61,7 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
     if (!email) return alert("Please enter an email address first.");
     setIsVerifying(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/send-email-otp`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -80,7 +80,7 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
     if (!emailOtp) return alert("Please enter the OTP.");
     setIsVerifying(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/verify-email-otp`, {
+      const response = await fetch(`${BACKEND_URL}/api/auth/validate-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: emailOtp }),
