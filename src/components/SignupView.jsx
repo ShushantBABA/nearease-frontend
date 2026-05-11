@@ -93,7 +93,7 @@ export default function SignupView({ onViewChange }) {
     
     setIsLoading(true);
     try {
-      const payload = { firstName, lastName, username, PhoneNumber, email, password };
+      const payload = { firstName, lastName, username, phoneNumber: PhoneNumber, email, password };
       const response = await fetch(`${BACKEND_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
