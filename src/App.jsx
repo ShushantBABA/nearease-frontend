@@ -15,8 +15,9 @@ import ProfileSettings from "./components/ProfileSettings";
 import AdminPanel from "./components/AdminPanel";
 import MyReviews from "./components/MyReviews";
 
-// API Service
+// API Services
 import { PublicAPI } from "./services/publicApi";
+import { UserAPI } from "./services/userApi"; // <--- ADDED: Needed for global search
 
 // Local UI Assets
 import { heroImages } from "./data/mockData"; 
@@ -47,46 +48,69 @@ export default function App() {
   const mainContentRef = useRef(null);
 
   // ==========================================
-  // FETCHING LOGIC (The Industry Approach)
+  // FETCHING LOGIC (TRAP 3 FIXED)
   // ==========================================
 
-  // 1. Initial Load: Fetch categories from backend
+  // 1. Initial Load: Fetch main categories from backend
   useEffect(() => {
     const loadCategories = async () => {
       const data = await PublicAPI.getCategories();
-      setMainCategories(data);
+      setMainCategories(Array.isArray(data) ? data : []);
     };
     loadCategories();
   }, []);
 
-  // 2. Fetch Subcategories when Main Category changes
+  // 2. Fetch Subcategories ONLY when Main Category changes
   useEffect(() => {
     const fetchSubCats = async () => {
+      setActiveSubCategory(null); // Reset subcategory when main category changes
+
       if (activeMainCategory === "All") {
         setSubCategories([]);
-        setListings([]); 
         return;
       }
-      setIsLoadingData(true);
+      
       const data = await PublicAPI.getTypesByCategory(activeMainCategory);
-      setSubCategories(data);
-      setActiveSubCategory(null); 
-      setIsLoadingData(false);
+      setSubCategories(Array.isArray(data) ? data : []);
     };
     fetchSubCats();
   }, [activeMainCategory]);
 
-  // 3. Fetch Service Offerings when a Subcategory is selected
+  // 3. THE MASTER FETCHER: Get Listings whenever ANY category changes
   useEffect(() => {
     const fetchListings = async () => {
-      if (!activeSubCategory) return;
       setIsLoadingData(true);
-      const data = await PublicAPI.getOfferingsByType(activeSubCategory.id);
-      setListings(data);
-      setIsLoadingData(false);
+      try {
+        let searchParams = {};
+
+        // If they selected a main category, add it to the search
+        if (activeMainCategory !== "All") {
+          searchParams.mainCategory = activeMainCategory;
+        }
+
+        // If they selected a specific subcategory, add it to the search
+        if (activeSubCategory) {
+          searchParams.subCategory = activeSubCategory; 
+        }
+
+        // Call the global search API to fetch the actual services
+        const data = await UserAPI.globalSearch(searchParams);
+        setListings(Array.isArray(data) ? data : []);
+
+      } catch (error) {
+        console.error("Failed to fetch listings:", error);
+        setListings([]); // Fallback to empty array on error
+      } finally {
+        setIsLoadingData(false);
+      }
     };
-    fetchListings();
-  }, [activeSubCategory]);
+
+    // Only run the fetch if we are on the home page to save network calls
+    if (activePage === "home") {
+      fetchListings();
+    }
+  }, [activeMainCategory, activeSubCategory, activePage]);
+
 
   const scrollToContent = () => {
     if (mainContentRef.current) {
@@ -97,6 +121,7 @@ export default function App() {
     }
   };
 
+  // Local text/location filtering on top of the fetched database results
   const filteredListings = listings.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
     const matchesLoc = item.location ? item.location.toLowerCase().includes(location.toLowerCase()) : true;
@@ -129,7 +154,7 @@ export default function App() {
         {/* --- ROUTING LOGIC --- */}
         {activePage === "home" ? (
           <>
-            {/* RESTORED CENTERED HERO SECTION */}
+            {/* HERO SECTION */}
             <div className="bg-white dark:bg-gray-900 py-16 md:py-24 px-4 transition-colors duration-300 border-b border-gray-100 dark:border-gray-800 relative z-10">
               <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div className="flex flex-col text-left space-y-6 z-10">
@@ -163,13 +188,12 @@ export default function App() {
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Choose an Experience</h3>
                 <div className="flex gap-4 overflow-x-auto pb-2">
                   <button 
-                    onClick={() => { setActiveMainCategory("All"); setListings([]); }}
+                    onClick={() => setActiveMainCategory("All")}
                     className={`px-6 py-3 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer ${activeMainCategory === "All" ? "bg-indigo-600 text-white shadow-md" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"}`}
                   >
                     All Services
                   </button>
                   
-                  {/* --- CRITICAL FIX AREA PRESERVED --- */}
                   {mainCategories.map((cat) => {
                     const catName = typeof cat === 'string' ? cat : cat?.name;
                     const catKey = typeof cat === 'string' ? cat : (cat?.id || cat?.name);
@@ -197,7 +221,8 @@ export default function App() {
                       <button 
                         key={sub.id || sub.name} 
                         onClick={() => setActiveSubCategory(sub.name)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${activeSubCategory?.id === sub.id ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300"}`}
+                        // Fixed the string matching bug here:
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${activeSubCategory === sub.name ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300"}`}
                       >
                         {sub.name}
                       </button>
@@ -212,9 +237,7 @@ export default function App() {
                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {activeMainCategory === "All" 
                       ? "Popular Services" 
-                      : (activeSubCategory 
-                        ? activeSubCategory.name 
-                        : (activeMainCategory.name || activeMainCategory))} 
+                      : (activeSubCategory ? activeSubCategory : activeMainCategory)} 
                     </h3>
                   {isLoadingData && <Loader2 className="animate-spin text-indigo-600" size={20} />}
                 </div>
@@ -236,28 +259,17 @@ export default function App() {
             </main>
           </>
         ) : activePage === "bookings" ? (
-          
           <MyBookings />
-
         ) : activePage === "my-reviews" ? (
-          
           <MyReviews />
-
         ) : activePage === "admin" ? (
-          
           <AdminPanel />
-
         ) : activePage === "settings" ? (
-          
           <ProfileSettings user={user} setUser={setUser} />
-          
         ) : activePage === "apply-provider" ? (
-          
           <BecomeProvider user={user} onBack={() => setActivePage("home")} />
-
         ) : activePage === "provider-dashboard" ? (
           <ProviderDashboard />
-
         ) : activePage === 'checkout' ? (
           <CheckoutPage service={bookingService} onBack={() => setActivePage("home")} />
         ) : (
