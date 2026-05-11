@@ -9,8 +9,8 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
   const [isLoading, setIsLoading] = useState(false);
 
   // --- Login States ---
-  const [email, setLoginEmail] = useState("");
-  const [password, setLoginPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false); // Toggle visibility
 
   // --- Signup States ---
@@ -39,8 +39,8 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
   // Clear inputs and reset visibility states when the modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setLoginEmail("");
-      setLoginPassword("");
+      setEmail("");
+      setPassword("");
       setFirstName("");
       setLastName("");
       setUsername("");
@@ -127,14 +127,14 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
   };
 
   const handleLogin = async () => {
-    if (!loginEmail || !loginPassword) return alert("Please fill in both fields.");
+    if (!email || !password) return alert("Please fill in both fields.");
     
     setIsLoading(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ email: email, password: password }),
       });
 
       if (response.ok) {
@@ -324,7 +324,7 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
                 <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1 ml-1 font-medium">Email Address</label>
                 <div className="relative">
                   <Mail size={18} className="absolute left-4 top-3.5 text-gray-400" />
-                  <input value={email} onChange={(e) => setLoginEmail(e.target.value)} type="email" placeholder="Enter your email" className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-800 pl-11 pr-4 py-3 rounded-xl outline-none transition" />
+                  <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Enter your email" className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-800 pl-11 pr-4 py-3 rounded-xl outline-none transition" />
                 </div>
               </div>
 
@@ -334,7 +334,7 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
                   <Lock size={18} className="absolute left-4 top-3.5 text-gray-400" />
                   <input 
                     value={password} 
-                    onChange={(e) => setLoginPassword(e.target.value)} 
+                    onChange={(e) => setPassword(e.target.value)} 
                     type={showLoginPassword ? "text" : "password"} 
                     placeholder="••••••••" 
                     className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-800 pl-11 pr-11 py-3 rounded-xl outline-none transition" 
