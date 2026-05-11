@@ -8,6 +8,12 @@ import ServiceCard from "./components/ServiceCard";
 import ServicePage from "./components/ServicePage";
 import CheckoutPage from "./components/CheckoutPage"; 
 import PreviewModal from "./components/PreviewModal";
+import MyBookings from "./components/MyBookings"; 
+import ProviderDashboard from "./components/ProviderDashboard";
+import BecomeProvider from "./components/BecomeProvider";
+import ProfileSettings from "./components/ProfileSettings";
+import AdminPanel from "./components/AdminPanel";
+import MyReviews from "./components/MyReviews";
 
 // API Service
 import { PublicAPI } from "./services/publicApi";
@@ -48,7 +54,6 @@ export default function App() {
   useEffect(() => {
     const loadCategories = async () => {
       const data = await PublicAPI.getCategories();
-      console.log("🚨 CATEGORY DATA 🚨:", data);
       setMainCategories(data);
     };
     loadCategories();
@@ -59,12 +64,11 @@ export default function App() {
     const fetchSubCats = async () => {
       if (activeMainCategory === "All") {
         setSubCategories([]);
-        setListings([]); // Or fetch "featured" listings
+        setListings([]); 
         return;
       }
       setIsLoadingData(true);
       const data = await PublicAPI.getTypesByCategory(activeMainCategory);
-      console.log("🚨 CATEGORY DATA 🚨:", data);
       setSubCategories(data);
       setActiveSubCategory(null); 
       setIsLoadingData(false);
@@ -78,7 +82,6 @@ export default function App() {
       if (!activeSubCategory) return;
       setIsLoadingData(true);
       const data = await PublicAPI.getOfferingsByType(activeSubCategory.id);
-      console.log("🚨 RAW BACKEND DATA 🚨:", data);
       setListings(data);
       setIsLoadingData(false);
     };
@@ -123,6 +126,7 @@ export default function App() {
           handleLogout={handleLogout} setAuthModalView={setAuthModalView}
         />
 
+        {/* --- ROUTING LOGIC --- */}
         {activePage === "home" ? (
           <>
             {/* RESTORED CENTERED HERO SECTION */}
@@ -165,22 +169,19 @@ export default function App() {
                     All Services
                   </button>
                   
-                  {/* --- THIS IS THE CRITICAL FIX AREA --- */}
+                  {/* --- CRITICAL FIX AREA PRESERVED --- */}
                   {mainCategories.map((cat) => {
-                    // Safety check: Extract the name whether it's an object or a string
                     const catName = typeof cat === 'string' ? cat : cat?.name;
-                    // Safety check: Extract a unique key
                     const catKey = typeof cat === 'string' ? cat : (cat?.id || cat?.name);
-
-                    if (!catName) return null; // Skip if somehow empty
+                    if (!catName) return null; 
 
                     return (
                       <button 
                         key={catKey} 
-                        onClick={() => setActiveMainCategory(catName)} // Only save the string!
+                        onClick={() => setActiveMainCategory(catName)} 
                         className={`px-6 py-3 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer ${activeMainCategory === catName ? "bg-indigo-600 text-white shadow-md" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"}`}
                       >
-                        {catName} {/* Only print the string! */}
+                        {catName} 
                       </button>
                     );
                   })}
@@ -213,7 +214,7 @@ export default function App() {
                       ? "Popular Services" 
                       : (activeSubCategory 
                         ? activeSubCategory.name 
-                        : (activeMainCategory.name || activeMainCategory))} {/* Safely handles both objects and strings */}
+                        : (activeMainCategory.name || activeMainCategory))} 
                     </h3>
                   {isLoadingData && <Loader2 className="animate-spin text-indigo-600" size={20} />}
                 </div>
@@ -234,13 +235,43 @@ export default function App() {
               </div>
             </main>
           </>
+        ) : activePage === "bookings" ? (
+          
+          <MyBookings />
+
+        ) : activePage === "my-reviews" ? (
+          
+          <MyReviews />
+
+        ) : activePage === "admin" ? (
+          
+          <AdminPanel />
+
+        ) : activePage === "settings" ? (
+          
+          <ProfileSettings user={user} setUser={setUser} />
+          
+        ) : activePage === "apply-provider" ? (
+          
+          <BecomeProvider user={user} onBack={() => setActivePage("home")} />
+
+        ) : activePage === "provider-dashboard" ? (
+          <ProviderDashboard />
+
         ) : activePage === 'checkout' ? (
-            <CheckoutPage service={bookingService} onBack={() => setActivePage("home")} />
+          <CheckoutPage service={bookingService} onBack={() => setActivePage("home")} />
         ) : (
-            <ServicePage service={activePage} onBack={() => setActivePage("home")} onProceedToPayment={(service) => { setBookingService(service); setActivePage('checkout'); }} />
+          <ServicePage service={activePage} onBack={() => setActivePage("home")} onProceedToPayment={(service) => { setBookingService(service); setActivePage('checkout'); }} />
         )}
 
-        <AuthModal isOpen={authModalView !== null} view={authModalView} onClose={() => setAuthModalView(null)} onViewChange={setAuthModalView} onLoginSuccess={setUser} />
+        {/* --- MODALS --- */}
+        <AuthModal 
+          isOpen={authModalView !== null} 
+          view={authModalView} 
+          onClose={() => setAuthModalView(null)} 
+          onViewChange={setAuthModalView} 
+          onLoginSuccess={setUser} 
+        />
         
         <PreviewModal 
           listing={selectedModalListing} 

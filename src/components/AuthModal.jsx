@@ -32,6 +32,10 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  // --- Resend the OTP States ---
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+
   // Clear inputs and reset visibility states when the modal opens/closes
   useEffect(() => {
     if (isOpen) {
@@ -148,6 +152,37 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
     }
   };
 
+  const handleResendOtp = async () => {
+    setIsResending(true);
+    setResendMessage("");
+    setError(""); // Clears any existing errors on the screen
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Assuming your email is stored in a formData object. 
+        // Adjust "formData.email" if your state variable is named differently.
+        body: JSON.stringify({ email: formData.email }), 
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setResendMessage("A new OTP has been sent to your email.");
+      } else {
+        setError(data.message || "Failed to resend OTP. Please try again.");
+      }
+    } catch (err) {
+      console.error("Resend OTP Error:", err);
+      setError("Network error. Cannot reach backend.");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200 overflow-y-auto">
       <div className="relative w-full max-w-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-3xl p-8 shadow-2xl text-gray-900 dark:text-white my-8">
@@ -204,10 +239,36 @@ export default function AuthModal({ isOpen, view, onClose, onViewChange, onLogin
                   <button onClick={handleVerifyOTP} disabled={isVerifying} className="px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition cursor-pointer">
                     {isVerifying ? <Loader2 size={18} className="animate-spin" /> : "Verify"}
                   </button>
+                  {/* Add this inside your OTP Verification view, below the Verify button */}
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Didn't receive the code?{" "}
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={isResending}
+                        className="font-semibold text-indigo-600 hover:text-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                        {isResending ? (
+                          <span className="flex items-center justify-center gap-1">
+                           <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+                          </span>
+                        ) : (
+                              "Resend OTP"
+                           )}
+                      </button>
+                    </p>
+  
+                    {/* Success message specifically for resending */}
+                    {resendMessage && (
+                      <p className="mt-2 text-sm text-green-600 flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" /> {resendMessage}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-
             {/* Passwords Row (with Eye Icons) */}
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div>

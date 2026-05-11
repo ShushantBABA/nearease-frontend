@@ -1,5 +1,6 @@
 import React from "react";
-import { Search, MapPin, Menu, UserCircle, LogOut, Moon, Sun } from "lucide-react";
+// 1. ADDED Calendar to the Lucide imports
+import { Search, MapPin, Menu, UserCircle, LogOut, Moon, Sun, Calendar, Briefcase, Shield } from "lucide-react"; 
 
 export default function Navbar({ 
   setActivePage, location, setLocation, search, setSearch, user, 
@@ -50,6 +51,60 @@ export default function Navbar({
               
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2">
+                  
+                  <button 
+                    onClick={() => {
+                      setActivePage("settings");
+                      setIsDropdownOpen(false); 
+                    }} 
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer"
+                  >
+                    <UserCircle size={18} /> Profile Settings
+                  </button>
+
+                  {/* 2. ADDED: My Bookings Link */}
+                  <button 
+                    onClick={() => {
+                      setActivePage("bookings");
+                      setIsDropdownOpen(false); // Close the dropdown automatically
+                    }} 
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer"
+                  >
+                    <Calendar size={18} /> My Bookings
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setActivePage("my-reviews");
+                      setIsDropdownOpen(false); 
+                    }} 
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer"
+                  >
+                    <Star size={18} /> My Reviews
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setActivePage("apply-provider");
+                      setIsDropdownOpen(false); 
+                    }} 
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer"
+                  >
+                    <Briefcase size={18} /> Become a Provider
+                  </button>
+
+                  {user?.role === "ADMIN" && (
+                    <button 
+                      onClick={() => {
+                        setActivePage("admin");
+                        setIsDropdownOpen(false); 
+                      }} 
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer"
+                    >
+                      <Shield size={18} /> Admin Panel
+                    </button>
+                  )}
+
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer border-t border-gray-100 dark:border-gray-700">
                     <LogOut size={18} /> Logout
                   </button>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Star, MapPin, ShoppingCart, CreditCard, ArrowLeft, Send, Phone, MessageCircle } from "lucide-react";
 
+import PortfolioGallery from "./PortfolioGallery";
+
 export default function ServicePage({ service, onBack, onProceedToPayment }) {
   const [previewImage, setPreviewImage] = useState(0);
   const [bookingState, setBookingState] = useState("idle"); 
@@ -69,6 +71,10 @@ export default function ServicePage({ service, onBack, onProceedToPayment }) {
           </div>
           
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8 text-lg">{service.description}</p>
+
+          <div className="mb-8">
+            <PortfolioGallery providerId={service?.provider?.id} />
+          </div>
 
           {/* Communication Buttons */}
           <div className="flex gap-4 mb-8">
