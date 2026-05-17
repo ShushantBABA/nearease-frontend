@@ -1,6 +1,6 @@
 import React from "react";
-// 1. ADDED Calendar to the Lucide imports
-import { Search, MapPin, Menu, UserCircle, LogOut, Moon, Sun, Calendar, Briefcase, Shield } from "lucide-react"; 
+// FIXED: Added 'Star' to the import list to prevent the white screen crash
+import { Search, MapPin, Menu, UserCircle, LogOut, Moon, Sun, Calendar, Briefcase, Shield, Star } from "lucide-react"; 
 
 export default function Navbar({ 
   setActivePage, location, setLocation, search, setSearch, user, 
@@ -45,7 +45,8 @@ export default function Navbar({
               <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-3 bg-indigo-50 dark:bg-gray-800 px-4 py-2 rounded-full cursor-pointer hover:bg-indigo-100 dark:hover:bg-gray-700 transition border border-indigo-100 dark:border-gray-700 overflow-hidden">
                 <UserCircle size={24} className="text-indigo-600 dark:text-indigo-400" />
                 <span className="font-semibold text-indigo-900 dark:text-indigo-100">
-                  Hi! {user?.user?.firstName || "User"}
+                  {/* FIXED: Checks multiple variations of how Spring Boot might send the name */}
+                  Hi! {user?.firstName || user?.username || user?.user?.firstName || "User"}
                 </span>
               </div>
               
@@ -62,11 +63,10 @@ export default function Navbar({
                     <UserCircle size={18} /> Profile Settings
                   </button>
 
-                  {/* 2. ADDED: My Bookings Link */}
                   <button 
                     onClick={() => {
                       setActivePage("bookings");
-                      setIsDropdownOpen(false); // Close the dropdown automatically
+                      setIsDropdownOpen(false); 
                     }} 
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer"
                   >
@@ -93,7 +93,8 @@ export default function Navbar({
                     <Briefcase size={18} /> Become a Provider
                   </button>
 
-                  {user?.role === "ADMIN" && (
+                  {/* FIXED: Replaced user?.role with a safer check for nested roles or arrays */}
+                  {(user?.role === "ADMIN" || user?.roles?.includes("ROLE_ADMIN")) && (
                     <button 
                       onClick={() => {
                         setActivePage("admin");
