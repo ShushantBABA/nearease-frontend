@@ -227,7 +227,7 @@ export default function App() {
                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {activeMainCategory === "All" 
                       ? "Popular Services" 
-                      : (activeSubCategory ? activeSubCategory : activeMainCategory)} 
+                      : (activeSubCategory ? activeSubCategory.name : activeMainCategory)} 
                     </h3>
                   {isLoadingData && <Loader2 className="animate-spin text-indigo-600" size={20} />}
                 </div>
