@@ -84,12 +84,16 @@ export default function ProfileSettings({ user, setUser }) {
     try {
       await UserAPI.changePassword({
         oldPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword
+        newPassword: passwords.newPassword,
+        confirmPassword: passwords.confirmPassword // <--- ADDED: Java requires this!
       });
+      
       showMessage("password", "Password successfully changed!");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      
     } catch (error) {
-      showMessage("password", "Failed to change password. Check your current password.", true);
+      // UPDATED: Now it will show the exact error from Spring Boot!
+      showMessage("password", error.message || "Failed to change password.", true);
     } finally {
       setLoadingSection(null);
     }
