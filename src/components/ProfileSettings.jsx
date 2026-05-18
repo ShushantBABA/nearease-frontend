@@ -36,8 +36,16 @@ export default function ProfileSettings({ user, setUser }) {
       formData.append("file", file); // Adjust "file" to match your Spring Boot backend
 
       const response = await UserAPI.updateProfileImage(formData);
-      // Assuming backend returns the updated user or the new image URL
-      setUser({ ...user, profileImage: response.imageUrl || response.url });
+      
+      // 1. Create the new user object (adjust based on what your backend returns)
+      const updatedUser = { ...user, profileImage: response.imageUrl || response.url || response };
+      
+      // 2. Update React State
+      setUser(updatedUser);
+      
+      // 3. Save to hard drive so it survives a refresh
+      localStorage.setItem("nearEaseUser", JSON.stringify(updatedUser)); 
+
       showMessage("image", "Profile picture updated!");
     } catch (error) {
       showMessage("image", "Failed to upload image.", true);
@@ -51,7 +59,16 @@ export default function ProfileSettings({ user, setUser }) {
     setLoadingSection("details");
     try {
       await UserAPI.updateDetails(details);
-      setUser({ ...user, ...details });
+      
+      // 1. Create the new user object
+      const updatedUser = { ...user, ...details };
+      
+      // 2. Update React State
+      setUser(updatedUser);
+      
+      // 3. Save to hard drive so it survives a refresh
+      localStorage.setItem("nearEaseUser", JSON.stringify(updatedUser));
+
       showMessage("details", "Profile details updated!");
     } catch (error) {
       showMessage("details", "Failed to update details.", true);
@@ -64,8 +81,9 @@ export default function ProfileSettings({ user, setUser }) {
     e.preventDefault();
     setLoadingSection("email");
     try {
-      await UserAPI.requestEmailUpdate({ newEmail });
-      showMessage("email", "Verification link sent to your new email!");
+      // FIXED: Must match the OtpRequestDto 'email' property exactly
+      await UserAPI.requestEmailUpdate({ email: newEmail });
+      showMessage("email", "Verification OTP sent to your new email!");
       setNewEmail("");
     } catch (error) {
       showMessage("email", "Failed to request email update.", true);
@@ -82,17 +100,17 @@ export default function ProfileSettings({ user, setUser }) {
 
     setLoadingSection("password");
     try {
+      // FIXED: Matches Java's PasswordUpdateDto properties perfectly
       await UserAPI.changePassword({
         oldPassword: passwords.currentPassword,
         newPassword: passwords.newPassword,
-        confirmPassword: passwords.confirmPassword // <--- ADDED: Java requires this!
+        confirmPassword: passwords.confirmPassword 
       });
       
       showMessage("password", "Password successfully changed!");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
       
     } catch (error) {
-      // UPDATED: Now it will show the exact error from Spring Boot!
       showMessage("password", error.message || "Failed to change password.", true);
     } finally {
       setLoadingSection(null);
