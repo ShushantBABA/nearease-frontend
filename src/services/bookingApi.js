@@ -79,16 +79,21 @@ export const BookingAPI = {
 
   // THE FIX: Pass OTP cleanly as a query parameter so Spring Boot parses it correctly
   completeBooking: async (bookingId, formData) => {
-    const token = getAuthToken();
-    return fetchWithAuth(`${BASE_URL}/${bookingId}/complete`, {
-      method: "PUT",
-      headers: { 
-        // We ONLY send Authorization. 
-        // DO NOT set Content-Type; the browser must set it automatically for FormData!
-        "Authorization": token ? `Bearer ${token}` : "" 
+    const user = JSON.parse(localStorage.getItem("nearEaseUser"));
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/bookings/complete/${bookingId}`, {
+      method: "POST", // (Or PUT, depending on your Spring Boot setup)
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+        // ⚠️ CRITICAL: Do NOT write "Content-Type": "application/json" or "multipart/form-data" here!
       },
-      body: formData, 
+      body: formData,
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to complete service");
+    }
+    return await response.json();
   },
 
   sendBookingOtp: async (bookingId) => {
