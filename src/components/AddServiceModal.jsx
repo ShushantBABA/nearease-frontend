@@ -9,14 +9,14 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [formData, setFormData] = useState({
-    name: "",
+    title: "", // Changed 'name' to 'title' to be clear
     serviceTypeId: "",
     price: "",
     description: ""
   });
   
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(""); // Added for better UX
+  const [imagePreview, setImagePreview] = useState(""); 
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,7 +38,7 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert("Image size cannot exceed 5MB");
+        window.alert("Image size cannot exceed 5MB");
         return;
       }
       setImageFile(file);
@@ -48,8 +48,8 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile || !formData.serviceTypeId || !formData.name || !formData.price || !formData.description) {
-      return alert("Please fill all required fields and upload a cover image.");
+    if (!imageFile || !formData.serviceTypeId || !formData.title || !formData.price || !formData.description) {
+      return window.alert("Please fill all required fields and upload a cover image.");
     }
     
     setIsSubmitting(true);
@@ -57,10 +57,13 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
       const submitData = new FormData();
       submitData.append("file", imageFile); 
       
+      // --- THE CRITICAL FIX: PAYLOAD MAPPING ---
+      // We map our frontend state to EXACTLY what Spring Boot's ServiceOfferingRequest expects
       const serviceDetailsBlob = new Blob([JSON.stringify({
-        name: formData.name, 
+        serviceTitle: formData.title,    // Matches 'private String ServiceTitle;' in backend
+        ServiceTitle: formData.title,    // Fallback for strict Jackson mapping
         serviceTypeId: formData.serviceTypeId,
-        price: formData.price,
+        price: Number(formData.price),
         description: formData.description
       })], { type: "application/json" });
       
@@ -68,22 +71,20 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
 
       const response = await ProviderAPI.addService(submitData);
 
-      // Success feedback to the user
-      alert(response?.message || "Service added successfully!");
+      window.alert(response?.message || "Service added successfully!");
 
       onSuccess(); 
       handleClose();   
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to add service. Please try again.");
+      window.alert(err.message || "Failed to add service. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    // Reset state before closing
-    setFormData({ name: "", serviceTypeId: "", price: "", description: "" });
+    setFormData({ title: "", serviceTypeId: "", price: "", description: "" });
     setSelectedCategory("");
     setImageFile(null);
     setImagePreview("");
@@ -104,7 +105,6 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
           </button>
         </div>
 
-        {/* Dynamic Content: Limit Error vs Form */}
         {hasExistingService ? (
           <div className="p-8 text-center flex flex-col items-center">
             <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
@@ -121,14 +121,14 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
             
-            {/* New Name/Title Input */}
+            {/* Custom Service Title Input */}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Service Title</label>
               <input 
                 type="text" required placeholder="e.g. Premium Home Deep Cleaning"
                 className="w-full p-3 border rounded-xl bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
               />
             </div>
 
@@ -187,7 +187,7 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
               />
             </div>
 
-            {/* Cleaned Image Upload Area */}
+            {/* Image Upload Area */}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Cover Image</label>
               {!imagePreview ? (
@@ -207,7 +207,7 @@ export default function AddServiceModal({ isOpen, onClose, onSuccess, hasExistin
                   <button
                     type="button"
                     onClick={() => { setImageFile(null); setImagePreview(""); }}
-                    className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-md transition transform group-hover:scale-105"
+                    className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-md transition transform group-hover:scale-105 cursor-pointer"
                   >
                     <X size={14} />
                   </button>

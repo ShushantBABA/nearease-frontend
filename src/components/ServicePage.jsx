@@ -74,7 +74,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
           </div>
 
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight">
-            {service.name || service.serviceType?.name || "Professional Service"}
+            {service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service"}
           </h1>
 
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">

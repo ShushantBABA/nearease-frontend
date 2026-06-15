@@ -24,7 +24,7 @@ export default function ServiceCard({ item, onCardClick, onPreviewClick }) {
       <div className="p-5 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2 gap-3">
           <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight line-clamp-2">
-            {item.name || item.serviceType?.name || "Professional Service"}
+            {item.serviceTitle || item.ServiceTitle || item.name || item.serviceType?.name || "Professional Service"}
           </h3>
           <div className={`flex items-center px-2 py-1 rounded-lg shrink-0 ${ratingValue === "New" ? "bg-amber-100 dark:bg-amber-900/40" : "bg-yellow-50 dark:bg-yellow-900/30"}`}>
             <Star size={14} className={`${ratingValue === "New" ? "text-amber-500" : "text-yellow-500 fill-current"} mr-1`} />

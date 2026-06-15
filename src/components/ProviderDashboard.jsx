@@ -29,7 +29,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
 
   // --- NEW: EDIT SERVICE STATES ---
   const [editingService, setEditingService] = useState(null);
-  const [editForm, setEditForm] = useState({ price: "", description: "" });
+  const [editForm, setEditForm] = useState({ title: "", price: "", description: "" });
   const [editFile, setEditFile] = useState(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
@@ -94,15 +94,15 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
 
   // --- NEW: HANDLE EDIT SUBMISSION ---
   const handleEditSubmit = async () => {
-    if (!editForm.price || editForm.price <= 0) return window.alert("Price must be greater than 0.");
-    if (!editForm.description.trim()) return window.alert("Description is required.");
+    if (!editForm.price || editForm.price <= 0) return alert("Price must be greater than 0.");
+    if (!editForm.description.trim()) return alert("Description is required.");
+    if (!editForm.title.trim()) return alert("Service Title is required."); // New validation
     
     setIsSubmittingEdit(true);
     try {
-      // Rebuild the ServiceOfferingRequest JSON exactly how Spring Boot expects it
       const serviceRequest = {
-        name: editingService.name || editingService.serviceTitle || "Service",
-        serviceTypeId: editingService.serviceTypeId || editingService.serviceType?.id || 1, // Fallback if needed
+        serviceTitle: editForm.title, // Sends the updated title
+        serviceTypeId: editingService.serviceTypeId || editingService.serviceType?.id || 1, 
         price: Number(editForm.price),
         description: editForm.description
       };
@@ -112,11 +112,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
       if (editFile) formData.append("file", editFile);
 
       await ProviderAPI.editService(editingService.id, formData);
-      window.alert("Service updated successfully!");
+      alert("Service updated successfully!");
       setEditingService(null);
-      refreshDashboardData(); // Refreshes the active services array
+      refreshDashboardData(); 
     } catch (error) {
-      window.alert(error.message || "Failed to update service.");
+      alert(error.message || "Failed to update service.");
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -124,7 +124,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
 
   const openEditModal = (service) => {
     setEditingService(service);
-    setEditForm({ price: service.price || "", description: service.description || "" });
+    setEditForm({ 
+      title: service.serviceTitle || service.ServiceTitle || service.name || "", 
+      price: service.price || "", 
+      description: service.description || "" 
+    });
     setEditFile(null);
   };
 
