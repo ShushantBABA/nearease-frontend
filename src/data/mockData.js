@@ -8,7 +8,7 @@ import srv1 from "../assets/new_hero.png";
 import srv2 from "../assets/hero2.jpg";
 import srv3 from "../assets/hero3.jpg";
 
-export const heroImages = [hero1, hero2, hero3, hero4, hero5, hero6];
+export const heroImages = [hero2, hero3, hero4, hero6];
 
 // 1. New Hierarchical Category Structure
 export const categoryStructure = {

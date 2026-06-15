@@ -1,15 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
-  Menu, UserCircle, LogOut, Moon, Sun, 
-  User, Edit, Compass, LayoutDashboard, 
-  PlusCircle, Star, Calendar, Briefcase, Shield
+  Menu, UserCircle, LogOut, Moon, Sun, Monitor,
+  User, Edit, LayoutDashboard, 
+  PlusCircle, Star, Calendar, Briefcase, Shield, ChevronDown
 } from "lucide-react"; 
 
 export default function Navbar({ 
   setActivePage, activePage, user, 
-  isDropdownOpen, setIsDropdownOpen, toggleTheme, isDarkMode, 
+  isDropdownOpen, setIsDropdownOpen, 
+  theme, setTheme, // <-- Updated props!
   handleLogout, setAuthModalView 
 }) {
+
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
   // --- RESTORED ROLE CHECKER ---
   const checkRole = (roleType) => {
@@ -42,66 +45,68 @@ export default function Navbar({
   const isProvider = checkRole('PROVIDER');
   const isAdmin = checkRole('ADMIN');
 
-  // --- THE FIX: DYNAMIC ACTIVE STYLE GENERATOR ---
-  const getNavStyle = (pageName, baseColor) => {
+  // --- DYNAMIC ACTIVE STYLE GENERATOR ---
+  const getNavStyle = (pageName) => {
     const isActive = activePage === pageName;
-    
-    // Color palettes for different buttons
-    const colorMap = {
-      indigo: { active: "text-indigo-700 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-900/40", hover: "hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50" },
-      emerald: { active: "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/30", hover: "hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-800/50" },
-      amber: { active: "text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30", hover: "hover:text-amber-600 dark:hover:text-amber-400 hover:bg-gray-50 dark:hover:bg-gray-800/50" },
-      red: { active: "text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-900/30", hover: "hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800/50" }
-    };
-
-    const colors = colorMap[baseColor];
-    
-    return `flex items-center gap-2 text-sm font-bold px-3 py-2 rounded-xl transition-all cursor-pointer ${
+    return `flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl transition-all duration-300 cursor-pointer ${
       isActive 
-        ? colors.active 
-        : `text-gray-600 dark:text-gray-300 ${colors.hover}`
+        ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20" 
+        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400"
     }`;
   };
 
   return (
-    <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 h-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center h-full">
+    // The wrapper creates the padding at the top so the navbar floats
+    <div className="pt-4 px-4 sm:px-6 lg:px-8 sticky top-0 z-50 mb-8">
+      {/* The Floating Glassmorphic Island */}
+      <nav className="max-w-7xl mx-auto bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl border border-white/50 dark:border-gray-700/50 shadow-xl shadow-indigo-500/5 dark:shadow-black/20 rounded-2xl h-[72px] flex justify-between items-center px-4 sm:px-6 transition-colors duration-300">
         
         {/* Left Side: Premium Modern Logo */}
         <div onClick={() => setActivePage("home")} className="flex items-center gap-3 cursor-pointer shrink-0 group">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 transform group-hover:scale-105 group-hover:-rotate-12 transition-all duration-300">
-            <Compass size={22} className="text-white" strokeWidth={2.5} />
+          <div className="w-10 h-10 transform group-hover:scale-105 group-hover:-rotate-6 transition-all duration-300 drop-shadow-md">
+            {/* INLINE SVG LOGO */}
+            <svg width="100%" height="100%" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="400" height="400" rx="100" fill="url(#nav-grad)"/>
+              <path d="M120 280V120L250 240V120" stroke="white" strokeWidth="48" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="280" cy="280" r="28" fill="#22D3EE"/>
+              <defs>
+                <linearGradient id="nav-grad" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#4F46E5"/>
+                  <stop offset="1" stopColor="#9333EA"/>
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
-          <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-500 tracking-tight">
+          <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 tracking-tight">
             NearEase
           </h1>
         </div>
 
-        {/* CENTER SPACE: Role-Specific Menus (Smoothly Fades In on Login) */}
+        {/* CENTER SPACE: Role-Specific Menus */}
         {user && (
-          <div className="hidden lg:flex flex-1 items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-700 ease-out">
+          <div className="hidden lg:flex flex-1 items-center justify-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-700 ease-out">
             {isAdmin ? (
-              <button onClick={() => setActivePage("admin")} className={getNavStyle("admin", "red")}>
+              <button onClick={() => setActivePage("admin")} className={getNavStyle("admin")}>
                 <Shield size={18} /> Admin Panel
               </button>
             ) : isProvider ? (
               <>
-                <button onClick={() => setActivePage("provider-dashboard")} className={getNavStyle("provider-dashboard", "indigo")}>
+                <button onClick={() => setActivePage("provider-dashboard")} className={getNavStyle("provider-dashboard")}>
                   <LayoutDashboard size={18} /> Dashboard
                 </button>
-                <button onClick={() => setActivePage("add-service")} className={getNavStyle("add-service", "emerald")}>
+                <button onClick={() => setActivePage("add-service")} className={getNavStyle("add-service")}>
                   <PlusCircle size={18} /> Add Service
                 </button>
-                <button onClick={() => setActivePage("my-reviews")} className={getNavStyle("my-reviews", "amber")}>
+                <button onClick={() => setActivePage("my-reviews")} className={getNavStyle("my-reviews")}>
                   <Star size={18} /> My Reviews
                 </button>
               </>
             ) : (
               <>
-                <button onClick={() => setActivePage("bookings")} className={getNavStyle("bookings", "indigo")}>
+                <button onClick={() => setActivePage("bookings")} className={getNavStyle("bookings")}>
                   <Calendar size={18} /> My Bookings
                 </button>
-                <button onClick={() => setActivePage("apply-provider")} className={getNavStyle("apply-provider", "emerald")}>
+                <button onClick={() => setActivePage("apply-provider")} className={getNavStyle("apply-provider")}>
                   <Briefcase size={18} /> Become a Provider
                 </button>
               </>
@@ -109,17 +114,35 @@ export default function Navbar({
           </div>
         )}
         
-        {/* Right Side: Modern Theme Toggle & Auth */}
-        <div className="flex items-center gap-6 shrink-0 ml-auto">
+        {/* Right Side: Theme Engine & Auth */}
+        <div className="flex items-center gap-4 shrink-0 ml-auto">
           
-          <button 
-            onClick={toggleTheme} 
-            className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors duration-300 focus:outline-none shadow-inner cursor-pointer hidden md:flex ${isDarkMode ? "bg-indigo-900" : "bg-gray-200"}`}
-          >
-            <span className={`flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${isDarkMode ? "translate-x-9" : "translate-x-1"}`}>
-              {isDarkMode ? <Moon size={14} className="text-indigo-400" /> : <Sun size={14} className="text-amber-500" />}
-            </span>
-          </button>
+          {/* THE NEW THEME ENGINE MENU */}
+          <div className="relative hidden md:block">
+            <button 
+              onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+              onBlur={() => setTimeout(() => setIsThemeMenuOpen(false), 200)}
+              className="flex items-center justify-center w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
+            >
+              {theme === 'light' ? <Sun size={20} /> : theme === 'dark' ? <Moon size={20} /> : <Monitor size={20} />}
+            </button>
+
+            {isThemeMenuOpen && (
+              <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden py-1 animate-in fade-in zoom-in-95 origin-top-right">
+                <button onClick={() => setTheme('light')} className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${theme === 'light' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                  <Sun size={16} /> Light
+                </button>
+                <button onClick={() => setTheme('dark')} className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${theme === 'dark' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                  <Moon size={16} /> Dark
+                </button>
+                <button onClick={() => setTheme('system')} className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${theme === 'system' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                  <Monitor size={16} /> System
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 hidden md:block"></div>
 
           {/* Smooth Auth Area */}
           <div className="hidden md:flex items-center min-w-[140px] justify-end">
@@ -127,37 +150,39 @@ export default function Navbar({
               <div className="relative animate-in fade-in slide-in-from-right-4 duration-500 ease-out">
                 <div 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
-                  className="flex items-center gap-3 bg-indigo-50 dark:bg-gray-800 px-4 py-2 rounded-full cursor-pointer hover:bg-indigo-100 dark:hover:bg-gray-700 transition border border-indigo-100 dark:border-gray-700 overflow-hidden shadow-sm"
+                  className="flex items-center gap-2.5 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 transition border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
                 >
                   {user?.profileImage || user?.profilePictureImageUrl ? (
                     <img src={user.profileImage || user.profilePictureImageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-indigo-200 dark:border-indigo-900" />
                   ) : (
-                    <UserCircle size={24} className="text-indigo-600 dark:text-indigo-400" />
+                    <UserCircle size={28} className="text-indigo-600 dark:text-indigo-400" />
                   )}
-                  <span className="font-semibold text-indigo-900 dark:text-indigo-100">
-                    Hi! {user?.firstName || user?.username || user?.user?.firstName || "User"}
+                  <span className="font-bold text-gray-800 dark:text-gray-200 pr-1">
+                    Hi, {user?.firstName || user?.username || user?.user?.firstName || "User"}
                   </span>
+                  <ChevronDown size={16} className={`text-gray-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
                 </div>
                 
                 {/* Clean Dropdown with only 3 specific items */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden py-2 origin-top-right animate-in zoom-in-95 fade-in duration-200">
-                    <button onClick={() => { setActivePage("view-profile"); setIsDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer">
+                  <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden py-2 origin-top-right animate-in zoom-in-95 fade-in duration-200">
+                    <button onClick={() => { setActivePage("view-profile"); setIsDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer">
                       <User size={18} /> View Profile
                     </button>
-                    <button onClick={() => { setActivePage("settings"); setIsDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 transition cursor-pointer">
+                    <button onClick={() => { setActivePage("settings"); setIsDropdownOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer">
                       <Edit size={18} /> Edit Profile
                     </button>
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer border-t border-gray-100 dark:border-gray-700">
+                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-4"></div>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer">
                       <LogOut size={18} /> Logout
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-500 ease-out">
-                <button onClick={() => setAuthModalView("login")} className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 font-bold transition cursor-pointer px-4">Login</button>
-                <button onClick={() => setAuthModalView("signup")} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-full font-bold transition shadow-md cursor-pointer hover:shadow-lg transform hover:-translate-y-0.5">Sign Up</button>
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500 ease-out">
+                <button onClick={() => setAuthModalView("login")} className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 font-bold transition cursor-pointer px-3">Login</button>
+                <button onClick={() => setAuthModalView("signup")} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition shadow-md shadow-indigo-500/20 cursor-pointer transform hover:-translate-y-0.5">Sign Up</button>
               </div>
             )}
           </div>
@@ -166,17 +191,15 @@ export default function Navbar({
         {/* Mobile menu action */}
         <div className="md:hidden flex items-center gap-3 shrink-0 ml-auto">
           <button 
-            onClick={toggleTheme} 
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${isDarkMode ? "bg-indigo-900" : "bg-gray-200"}`}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
           >
-            <span className={`flex items-center justify-center h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${isDarkMode ? "translate-x-6" : "translate-x-1"}`}>
-              {isDarkMode ? <Moon size={12} className="text-indigo-400" /> : <Sun size={12} className="text-amber-500" />}
-            </span>
+            {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
           <button className="text-gray-600 dark:text-gray-300 cursor-pointer p-1"><Menu size={28} /></button>
         </div>
 
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
