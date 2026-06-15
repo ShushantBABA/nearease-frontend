@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { 
   ArrowLeft, Star, MapPin, CheckCircle, ShieldCheck, 
-  Clock, CreditCard, ChevronRight, User as UserIcon, Calendar, MessageSquare
+  Clock, CreditCard, ChevronRight, MessageSquare
 } from "lucide-react";
 import { PublicAPI } from "../services/publicApi";
-import GoBackButton from "./GoBackButton";
 
 export default function ServicePage({ service, onBack, onProceedToCheckout, onLoginRedirect }) {
   const [reviews, setReviews] = useState([]);
@@ -13,7 +12,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   useEffect(() => {
     window.scrollTo(0, 0);
     
-    // Fetch reviews specifically for this provider
     const fetchReviews = async () => {
       if (service?.provider?.id || service?.providerProfile?.id) {
         setIsLoadingReviews(true);
@@ -36,14 +34,29 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
 
   if (!service) return null;
 
-  const user = JSON.parse(localStorage.getItem("nearEaseUser"));
+  // --- BULLETPROOF DATA SANITIZATION ---
+  const safeGetUser = () => {
+    try { return JSON.parse(localStorage.getItem("nearEaseUser")) || null; } 
+    catch { return null; }
+  };
+  const user = safeGetUser();
+
   const provider = service.provider || service.providerProfile || {};
-  const providerName = provider.firstName ? `${provider.firstName} ${provider.lastName || ''}`.trim() : (provider.name || "Professional Provider");
+  const rawProviderName = provider.firstName 
+    ? `${provider.firstName} ${provider.lastName || ''}`.trim() 
+    : (provider.name || "Professional Provider");
   
-  // THE FIX: Accurate Rating Extraction
-  const avgRating = provider.averageRating || service.averageRating || 0;
-  const reviewCount = provider.reviewCount || service.reviewCount || 0;
-  const hasRating = Number(avgRating) > 0;
+  const providerName = String(rawProviderName);
+  const providerInitial = providerName.charAt(0).toUpperCase();
+
+  const rawRating = provider.averageRating || service.averageRating || 0;
+  const avgRating = Number(rawRating);
+  const hasRating = !isNaN(avgRating) && avgRating > 0;
+  
+  const reviewCount = Number(provider.reviewCount || service.reviewCount || 0);
+
+  const safeTitle = String(service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service");
+  const safeCategory = String(service.serviceTypename || service.serviceType?.name || "Service");
 
   const handleBooking = () => {
     if (!user) {
@@ -58,7 +71,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
       {/* Top Banner & Image */}
       <div className="relative h-[40vh] md:h-[50vh] w-full bg-gray-900 overflow-hidden">
         {service.imageUrl ? (
-          <img src={service.imageUrl} alt={service.serviceTitle || service.name} className="w-full h-full object-cover opacity-70" />
+          <img src={service.imageUrl} alt={safeTitle} className="w-full h-full object-cover opacity-70" />
         ) : (
           <div className="w-full h-full bg-gradient-to-tr from-indigo-900 to-purple-800 opacity-90"></div>
         )}
@@ -88,14 +101,13 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-xl border border-gray-100 dark:border-gray-700">
               <div className="flex flex-wrap gap-3 mb-4">
                 <span className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
-                  {service.serviceTypename || service.serviceType?.name || "Service"}
+                  {safeCategory}
                 </span>
                 
-                {/* THE FIX: Display rating correctly in the Header Card */}
                 {hasRating ? (
                   <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1.5 rounded-full text-sm font-bold border border-yellow-100 dark:border-yellow-800/50">
                     <Star size={16} className="fill-yellow-400 text-yellow-400" />
-                    <span>{Number(avgRating).toFixed(1)}</span>
+                    <span>{avgRating.toFixed(1)}</span>
                     <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">({reviewCount} reviews)</span>
                   </div>
                 ) : (
@@ -107,18 +119,18 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
 
               <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight">
-                {service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service"}
+                {safeTitle}
               </h1>
               
               <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-lg mb-8 font-medium">
-                <MapPin size={20} className="text-indigo-500" />
-                {service.location || provider.city || provider.address || "Location unavailable"}
+                <MapPin size={20} className="text-indigo-500 shrink-0" />
+                <span className="truncate">{String(service.location || provider.city || provider.address || "Location unavailable")}</span>
               </div>
 
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">About this service</h3>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  {service.description || "No description provided."}
+                  {String(service.description || "No description provided.")}
                 </p>
               </div>
             </div>
@@ -132,7 +144,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                   {provider.imageUrl ? (
                     <img src={provider.imageUrl} alt={providerName} className="w-full h-full rounded-full object-cover" />
                   ) : (
-                    <span className="text-3xl font-black">{providerName.charAt(0)}</span>
+                    <span className="text-3xl font-black">{providerInitial}</span>
                   )}
                 </div>
                 
@@ -148,18 +160,18 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                   
                   <div className="flex flex-wrap gap-4 text-sm font-medium text-gray-600 dark:text-gray-400 mb-6">
                     <div className="flex items-center gap-1.5">
-                       <CheckCircle size={16} className="text-green-500" /> {provider.completedJobs || 0} Jobs Completed
+                       <CheckCircle size={16} className="text-green-500" /> {Number(provider.completedJobs || 0)} Jobs Completed
                     </div>
                     {provider.experience && (
                       <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-                         {provider.experience} Experience
+                         {String(provider.experience)} Experience
                       </div>
                     )}
                   </div>
                   
                   {provider.bio && (
                     <p className="text-gray-600 dark:text-gray-400 leading-relaxed italic border-l-4 border-indigo-100 dark:border-indigo-900/50 pl-4 py-1">
-                      "{provider.bio}"
+                      "{String(provider.bio)}"
                     </p>
                   )}
                 </div>
@@ -184,36 +196,40 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {reviews.map((review) => (
+                  {reviews.map((review) => {
+                    const revRating = Number(review.rating || 0);
+                    const revInitial = String(review.customerName || "U").charAt(0).toUpperCase();
+                    
+                    return (
                     <div key={review.id} className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-full flex items-center justify-center font-black">
-                            {(review.customerName || "U").charAt(0)}
+                          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-full flex items-center justify-center font-black shrink-0">
+                            {revInitial}
                           </div>
                           <div>
-                            <h5 className="font-bold text-gray-900 dark:text-white">{review.customerName || "Verified Customer"}</h5>
+                            <h5 className="font-bold text-gray-900 dark:text-white">{String(review.customerName || "Verified Customer")}</h5>
                             <p className="text-xs text-gray-500">{review.bookingDate ? new Date(review.bookingDate).toLocaleDateString() : ""}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg border border-yellow-100 dark:border-yellow-800/50">
                           <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                          <span className="font-bold text-yellow-700 dark:text-yellow-400 text-sm">{review.rating}.0</span>
+                          <span className="font-bold text-yellow-700 dark:text-yellow-400 text-sm">{revRating.toFixed(1)}</span>
                         </div>
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300 italic">"{review.comment}"</p>
+                      <p className="text-gray-700 dark:text-gray-300 italic">"{String(review.comment || "")}"</p>
                       
                       {review.providerReply && (
                         <div className="mt-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-indigo-50 dark:border-indigo-900/30 flex gap-3 shadow-sm">
                           <MessageSquare className="text-indigo-400 mt-1 shrink-0" size={18} />
                           <div>
                             <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Provider Response</p>
-                            <p className="text-sm text-gray-700 dark:text-gray-300">{review.providerReply}</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{String(review.providerReply)}</p>
                           </div>
                         </div>
                       )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -225,7 +241,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 shadow-2xl border border-gray-100 dark:border-gray-700 sticky top-28">
               <h3 className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-2">Service Total</h3>
               <div className="text-5xl font-black text-gray-900 dark:text-white mb-6">
-                ₹{service.price}
+                ₹{Number(service.price || 0)}
               </div>
               
               <div className="space-y-4 mb-8">
