@@ -1,40 +1,58 @@
 import React, { useState, useEffect } from "react";
 import { 
-  ArrowLeft, Star, MapPin, CheckCircle, ShieldCheck, Loader2,
-  Clock, CreditCard, ChevronRight, MessageSquare
+  ArrowLeft, Star, MapPin, CheckCircle, ShieldCheck, 
+  Clock, CreditCard, ChevronRight, MessageSquare, Loader2, Image as ImageIcon
 } from "lucide-react";
 import { PublicAPI } from "../services/publicApi";
 
 export default function ServicePage({ service, onBack, onProceedToCheckout, onLoginRedirect }) {
   const [reviews, setReviews] = useState([]);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [portfolio, setPortfolio] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   useEffect(() => {
     window.scrollTo(0, 0);
     
-    const fetchReviews = async () => {
-      if (service?.provider?.id || service?.providerProfile?.id) {
-        setIsLoadingReviews(true);
-        try {
-          const providerId = service.provider?.id || service.providerProfile?.id;
-          const reviewsData = await PublicAPI.getProviderReviews(providerId);
-          setReviews(Array.isArray(reviewsData) ? reviewsData : []);
-        } catch (error) {
-          console.error("Failed to fetch reviews", error);
-        } finally {
-          setIsLoadingReviews(false);
+    const fetchPageData = async () => {
+      setIsLoadingData(true);
+      const providerId = service?.provider?.id || service?.providerProfile?.id;
+      const serviceId = service?.id;
+
+      // 1. Fetch Reviews (Robust Fallback Logic)
+      try {
+        let fetchedReviews = [];
+        // Try multiple standard API method names to ensure we catch the reviews
+        if (typeof PublicAPI.getServiceReviews === "function") {
+          fetchedReviews = await PublicAPI.getServiceReviews(serviceId);
+        } else if (typeof PublicAPI.getProviderReviews === "function") {
+          fetchedReviews = await PublicAPI.getProviderReviews(providerId);
+        } else if (typeof PublicAPI.getReviews === "function") {
+          fetchedReviews = await PublicAPI.getReviews(serviceId);
         }
-      } else {
-        setIsLoadingReviews(false);
+        setReviews(Array.isArray(fetchedReviews) ? fetchedReviews : []);
+      } catch (error) {
+        console.error("Failed to fetch reviews", error);
       }
+
+      // 2. Fetch Provider Portfolio (Before/After Images)
+      if (providerId) {
+        try {
+          const fetchedPortfolio = await PublicAPI.getProviderPortfolio(providerId);
+          setPortfolio(Array.isArray(fetchedPortfolio) ? fetchedPortfolio : []);
+        } catch (error) {
+          console.error("Failed to fetch portfolio", error);
+        }
+      }
+      
+      setIsLoadingData(false);
     };
     
-    fetchReviews();
+    fetchPageData();
   }, [service]);
 
   if (!service) return null;
 
-  // --- BULLETPROOF DATA SANITIZATION ---
+  // --- DATA SANITIZATION & LOGIC ---
   const safeGetUser = () => {
     try { return JSON.parse(localStorage.getItem("nearEaseUser")) || null; } 
     catch { return null; }
@@ -42,28 +60,35 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   const user = safeGetUser();
 
   const provider = service.provider || service.providerProfile || {};
-  const rawProviderName = provider.firstName 
-    ? `${provider.firstName} ${provider.lastName || ''}`.trim() 
-    : (provider.name || "Professional Provider");
-  
-  const providerName = String(rawProviderName);
+  const providerName = String(provider.firstName ? `${provider.firstName} ${provider.lastName || ''}`.trim() : (provider.name || "Professional Provider"));
   const providerInitial = providerName.charAt(0).toUpperCase();
 
-  const rawRating = provider.averageRating || service.averageRating || 0;
-  const avgRating = Number(rawRating);
+  const avgRating = Number(provider.averageRating || service.averageRating || 0);
   const hasRating = !isNaN(avgRating) && avgRating > 0;
   
-  const reviewCount = Number(provider.reviewCount || service.reviewCount || 0);
+  // Smart Jobs Calculation (Avoids showing "0 Jobs Completed")
+  const rawJobsCount = Number(provider.completedJobs || 0);
+  const displayJobs = rawJobsCount > 0 ? rawJobsCount : (portfolio.length > 0 ? portfolio.length : (reviews.length > 0 ? reviews.length : 0));
 
   const safeTitle = String(service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service");
   const safeCategory = String(service.serviceTypename || service.serviceType?.name || "Service");
+
+  // Prevent Providers from booking their own service
+  const isOwnService = user && provider && (
+    (user.providerProfile?.id === provider.id) || 
+    (user.id && provider.userId && user.id === provider.userId) ||
+    (user.email && provider.email && user.email === provider.email) ||
+    (user.roles?.includes("PROVIDER") && providerName === `${user.firstName} ${user.lastName}`.trim())
+  );
 
   const handleBooking = () => {
     if (!user) {
       onLoginRedirect();
       return;
     }
-    onProceedToCheckout();
+    if (!isOwnService) {
+      onProceedToCheckout();
+    }
   };
 
   return (
@@ -108,7 +133,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                   <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1.5 rounded-full text-sm font-bold border border-yellow-100 dark:border-yellow-800/50">
                     <Star size={16} className="fill-yellow-400 text-yellow-400" />
                     <span>{avgRating.toFixed(1)}</span>
-                    <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">({reviewCount} reviews)</span>
+                    <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">({reviews.length || provider.reviewCount || 0} reviews)</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full text-sm font-bold border border-amber-100 dark:border-amber-800/50">
@@ -159,9 +184,12 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                   </div>
                   
                   <div className="flex flex-wrap gap-4 text-sm font-medium text-gray-600 dark:text-gray-400 mb-6">
-                    <div className="flex items-center gap-1.5">
-                       <CheckCircle size={16} className="text-green-500" /> {Number(provider.completedJobs || 0)} Jobs Completed
-                    </div>
+                    {/* FIXED: Only shows Jobs Completed if > 0 */}
+                    {displayJobs > 0 && (
+                      <div className="flex items-center gap-1.5">
+                         <CheckCircle size={16} className="text-green-500" /> {displayJobs} Jobs Completed
+                      </div>
+                    )}
                     {provider.experience && (
                       <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
                          {String(provider.experience)} Experience
@@ -178,6 +206,31 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             </div>
 
+            {/* RESTORED: Portfolio Section */}
+            {portfolio.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-3 mb-6">
+                  <ImageIcon className="text-indigo-600" size={28} />
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Work Portfolio</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {portfolio.map((item, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group shadow-sm bg-gray-100 dark:bg-gray-900">
+                      <img 
+                        src={item.afterImages || item.afterImage || item.imageUrl || item.image} 
+                        alt="Portfolio Work" 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                        <span className="text-white font-bold text-sm tracking-wide">Verified Work</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Reviews Section */}
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-8">
@@ -187,7 +240,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 </span>
               </div>
               
-              {isLoadingReviews ? (
+              {isLoadingData ? (
                 <div className="flex justify-center py-12"><Loader2 className="animate-spin text-indigo-600" /></div>
               ) : reviews.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
@@ -196,12 +249,12 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {reviews.map((review) => {
+                  {reviews.map((review, idx) => {
                     const revRating = Number(review.rating || 0);
                     const revInitial = String(review.customerName || "U").charAt(0).toUpperCase();
                     
                     return (
-                    <div key={review.id} className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <div key={review.id || idx} className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-full flex items-center justify-center font-black shrink-0">
@@ -255,12 +308,19 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 </div>
               </div>
 
-              <button 
-                onClick={handleBooking}
-                className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-indigo-700 transition shadow-xl shadow-indigo-500/30 flex justify-center items-center gap-2 transform hover:-translate-y-1 cursor-pointer"
-              >
-                Proceed to Booking <ChevronRight size={20} />
-              </button>
+              {/* THE FIX: Block Self-Booking */}
+              {isOwnService ? (
+                <div className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 py-4 rounded-2xl font-bold flex justify-center items-center gap-2 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                   This is your own service
+                </div>
+              ) : (
+                <button 
+                  onClick={handleBooking}
+                  className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-indigo-700 transition shadow-xl shadow-indigo-500/30 flex justify-center items-center gap-2 transform hover:-translate-y-1 cursor-pointer"
+                >
+                  Proceed to Booking <ChevronRight size={20} />
+                </button>
+              )}
               
               {!user && (
                 <p className="text-center text-sm text-gray-500 mt-4">
