@@ -18,10 +18,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
       const providerId = service?.provider?.id || service?.providerProfile?.id;
       const serviceId = service?.id;
 
-      // 1. Fetch Reviews (Robust Fallback Logic)
       try {
         let fetchedReviews = [];
-        // Try multiple standard API method names to ensure we catch the reviews
         if (typeof PublicAPI.getServiceReviews === "function") {
           fetchedReviews = await PublicAPI.getServiceReviews(serviceId);
         } else if (typeof PublicAPI.getProviderReviews === "function") {
@@ -34,7 +32,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
         console.error("Failed to fetch reviews", error);
       }
 
-      // 2. Fetch Provider Portfolio (Before/After Images)
       if (providerId) {
         try {
           const fetchedPortfolio = await PublicAPI.getProviderPortfolio(providerId);
@@ -52,7 +49,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
 
   if (!service) return null;
 
-  // --- DATA SANITIZATION & LOGIC ---
   const safeGetUser = () => {
     try { return JSON.parse(localStorage.getItem("nearEaseUser")) || null; } 
     catch { return null; }
@@ -66,20 +62,28 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   const avgRating = Number(provider.averageRating || service.averageRating || 0);
   const hasRating = !isNaN(avgRating) && avgRating > 0;
   
-  // Smart Jobs Calculation (Avoids showing "0 Jobs Completed")
   const rawJobsCount = Number(provider.completedJobs || 0);
   const displayJobs = rawJobsCount > 0 ? rawJobsCount : (portfolio.length > 0 ? portfolio.length : (reviews.length > 0 ? reviews.length : 0));
 
   const safeTitle = String(service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service");
   const safeCategory = String(service.serviceTypename || service.serviceType?.name || "Service");
 
-  // Prevent Providers from booking their own service
-  const isOwnService = user && provider && (
-    (user.providerProfile?.id === provider.id) || 
-    (user.id && provider.userId && user.id === provider.userId) ||
-    (user.email && provider.email && user.email === provider.email) ||
-    (user.roles?.includes("PROVIDER") && providerName === `${user.firstName} ${user.lastName}`.trim())
-  );
+  // --- FIX 1: BULLETPROOF IDENTITY CHECK ---
+  const isOwnService = (() => {
+    if (!user || !provider) return false;
+    
+    const uId = String(user.id);
+    const pId = String(provider.id);
+    
+    return (
+      uId === String(provider.userId) || 
+      uId === String(provider.user?.id) || 
+      String(user.providerId) === pId ||
+      (user.email && (user.email === provider.email || user.email === provider.user?.email)) ||
+      // Fallback: If they are a provider and the names match
+      (user.roles?.includes("PROVIDER") && providerName.toLowerCase().includes((user.firstName || "").toLowerCase()))
+    );
+  })();
 
   const handleBooking = () => {
     if (!user) {
@@ -93,7 +97,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-24 animate-in fade-in duration-500">
-      {/* Top Banner & Image */}
       <div className="relative h-[40vh] md:h-[50vh] w-full bg-gray-900 overflow-hidden">
         {service.imageUrl ? (
           <img src={service.imageUrl} alt={safeTitle} className="w-full h-full object-cover opacity-70" />
@@ -101,10 +104,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
           <div className="w-full h-full bg-gradient-to-tr from-indigo-900 to-purple-800 opacity-90"></div>
         )}
         
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
         
-        {/* Navigation */}
         <div className="absolute top-0 left-0 w-full p-4 sm:p-6 lg:px-8 max-w-7xl mx-auto flex justify-between items-center z-10">
           <button 
             onClick={onBack} 
@@ -115,14 +116,11 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
         </div>
       </div>
 
-      {/* Main Content Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 relative z-20">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column: Details */}
           <div className="lg:col-span-2 space-y-8">
             
-            {/* Header Card */}
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-xl border border-gray-100 dark:border-gray-700">
               <div className="flex flex-wrap gap-3 mb-4">
                 <span className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
@@ -160,7 +158,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             </div>
 
-            {/* Provider Details Card */}
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Meet Your Professional</h3>
               
@@ -184,7 +181,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                   </div>
                   
                   <div className="flex flex-wrap gap-4 text-sm font-medium text-gray-600 dark:text-gray-400 mb-6">
-                    {/* FIXED: Only shows Jobs Completed if > 0 */}
                     {displayJobs > 0 && (
                       <div className="flex items-center gap-1.5">
                          <CheckCircle size={16} className="text-green-500" /> {displayJobs} Jobs Completed
@@ -206,7 +202,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             </div>
 
-            {/* RESTORED: Portfolio Section */}
+            {/* --- FIX 2: PORTFOLIO IMAGE RENDERING --- */}
             {portfolio.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-6">
@@ -215,23 +211,34 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {portfolio.map((item, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group shadow-sm bg-gray-100 dark:bg-gray-900">
-                      <img 
-                        src={item.afterImages || item.afterImage || item.imageUrl || item.image} 
-                        alt="Portfolio Work" 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                        <span className="text-white font-bold text-sm tracking-wide">Verified Work</span>
+                  {portfolio.map((item, idx) => {
+                    // This safely grabs the URL whether the API returned a raw string OR an object!
+                    const imgSrc = typeof item === 'string' 
+                      ? item 
+                      : (item?.afterImages || item?.beforeImages || item?.imageUrl || item?.image);
+
+                    // Skip rendering if there is no valid URL found
+                    if (!imgSrc) return null;
+
+                    return (
+                      <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group shadow-sm bg-gray-100 dark:bg-gray-900">
+                        <img 
+                          src={imgSrc} 
+                          alt="Portfolio Work" 
+                          // If the image link is dead/expired on the server, this hides the broken icon
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                          <span className="text-white font-bold text-sm tracking-wide">Verified Work</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Reviews Section */}
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Customer Reviews</h3>
@@ -289,7 +296,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
             
           </div>
           
-          {/* Right Column: Checkout Card */}
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 shadow-2xl border border-gray-100 dark:border-gray-700 sticky top-28">
               <h3 className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-2">Service Total</h3>
@@ -308,9 +314,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 </div>
               </div>
 
-              {/* THE FIX: Block Self-Booking */}
               {isOwnService ? (
-                <div className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 py-4 rounded-2xl font-bold flex justify-center items-center gap-2 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
+                <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-4 rounded-2xl font-bold flex justify-center items-center gap-2 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600">
                    This is your own service
                 </div>
               ) : (
