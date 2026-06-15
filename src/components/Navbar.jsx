@@ -46,12 +46,42 @@ export default function Navbar({
   const isAdmin = checkRole('ADMIN');
 
   // --- DYNAMIC ACTIVE STYLE GENERATOR ---
-  const getNavStyle = (pageName) => {
+ const getNavStyle = (pageName, baseColor) => {
     const isActive = activePage === pageName;
+
+    const colorMap = {
+      indigo: { 
+        active: "bg-indigo-600 text-white shadow-md shadow-indigo-500/25", 
+        hover: "hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400" 
+      },
+      emerald: { 
+        active: "bg-emerald-600 text-white shadow-md shadow-emerald-500/25", 
+        hover: "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400" 
+      },
+      amber: { 
+        active: "bg-amber-500 text-white shadow-md shadow-amber-500/25", 
+        hover: "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/30 dark:hover:text-amber-400" 
+      },
+      rose: { 
+        active: "bg-rose-600 text-white shadow-md shadow-rose-500/25", 
+        hover: "hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400" 
+      },
+      blue: { 
+        active: "bg-blue-600 text-white shadow-md shadow-blue-500/25", 
+        hover: "hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400" 
+      },
+      purple: { 
+        active: "bg-purple-600 text-white shadow-md shadow-purple-500/25", 
+        hover: "hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/30 dark:hover:text-purple-400" 
+      }
+    };
+
+    const colors = colorMap[baseColor] || colorMap.indigo;
+
     return `flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl transition-all duration-300 cursor-pointer ${
       isActive 
-        ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20" 
-        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400"
+        ? colors.active 
+        : `text-gray-600 dark:text-gray-300 ${colors.hover}`
     }`;
   };
 
@@ -86,27 +116,27 @@ export default function Navbar({
         {user && (
           <div className="hidden lg:flex flex-1 items-center justify-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-700 ease-out">
             {isAdmin ? (
-              <button onClick={() => setActivePage("admin")} className={getNavStyle("admin")}>
+              <button onClick={() => setActivePage("admin")} className={getNavStyle("admin", "rose")}>
                 <Shield size={18} /> Admin Panel
               </button>
             ) : isProvider ? (
               <>
-                <button onClick={() => setActivePage("provider-dashboard")} className={getNavStyle("provider-dashboard")}>
+                <button onClick={() => setActivePage("provider-dashboard")} className={getNavStyle("provider-dashboard", "indigo")}>
                   <LayoutDashboard size={18} /> Dashboard
                 </button>
-                <button onClick={() => setActivePage("add-service")} className={getNavStyle("add-service")}>
+                <button onClick={() => setActivePage("add-service")} className={getNavStyle("add-service", "emerald")}>
                   <PlusCircle size={18} /> Add Service
                 </button>
-                <button onClick={() => setActivePage("my-reviews")} className={getNavStyle("my-reviews")}>
+                <button onClick={() => setActivePage("my-reviews")} className={getNavStyle("my-reviews", "amber")}>
                   <Star size={18} /> My Reviews
                 </button>
               </>
             ) : (
               <>
-                <button onClick={() => setActivePage("bookings")} className={getNavStyle("bookings")}>
+                <button onClick={() => setActivePage("bookings")} className={getNavStyle("bookings", "blue")}>
                   <Calendar size={18} /> My Bookings
                 </button>
-                <button onClick={() => setActivePage("apply-provider")} className={getNavStyle("apply-provider")}>
+                <button onClick={() => setActivePage("apply-provider")} className={getNavStyle("apply-provider", "purple")}>
                   <Briefcase size={18} /> Become a Provider
                 </button>
               </>
@@ -122,20 +152,33 @@ export default function Navbar({
             <button 
               onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
               onBlur={() => setTimeout(() => setIsThemeMenuOpen(false), 200)}
-              className="flex items-center justify-center w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
+              className="flex items-center justify-center w-10 h-10 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none cursor-pointer"
             >
               {theme === 'light' ? <Sun size={20} /> : theme === 'dark' ? <Moon size={20} /> : <Monitor size={20} />}
             </button>
 
             {isThemeMenuOpen && (
               <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden py-1 animate-in fade-in zoom-in-95 origin-top-right">
-                <button onClick={() => setTheme('light')} className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${theme === 'light' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                
+                {/* THE FIX: Changed onClick to onMouseDown and manually close menu */}
+                <button 
+                  onMouseDown={() => { setTheme('light'); setIsThemeMenuOpen(false); }} 
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${theme === 'light' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                >
                   <Sun size={16} /> Light
                 </button>
-                <button onClick={() => setTheme('dark')} className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${theme === 'dark' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                
+                <button 
+                  onMouseDown={() => { setTheme('dark'); setIsThemeMenuOpen(false); }} 
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${theme === 'dark' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                >
                   <Moon size={16} /> Dark
                 </button>
-                <button onClick={() => setTheme('system')} className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${theme === 'system' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                
+                <button 
+                  onMouseDown={() => { setTheme('system'); setIsThemeMenuOpen(false); }} 
+                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${theme === 'system' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                >
                   <Monitor size={16} /> System
                 </button>
               </div>
@@ -191,14 +234,17 @@ export default function Navbar({
         {/* Mobile menu action */}
         <div className="md:hidden flex items-center gap-3 shrink-0 ml-auto">
           <button 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
-            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+            onClick={() => {
+               // Check what the screen actually looks like right now
+               const isCurrentlyDark = document.documentElement.classList.contains('dark');
+               setTheme(isCurrentlyDark ? 'light' : 'dark');
+            }} 
+            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-pointer"
           >
-            {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+            {document.documentElement.classList.contains('dark') ? <Moon size={18} /> : <Sun size={18} />}
           </button>
           <button className="text-gray-600 dark:text-gray-300 cursor-pointer p-1"><Menu size={28} /></button>
         </div>
-
       </nav>
     </div>
   );
