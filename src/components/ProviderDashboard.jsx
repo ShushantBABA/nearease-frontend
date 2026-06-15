@@ -27,7 +27,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
   const [isSubmittingOtp, setIsSubmittingOtp] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
-  // --- NEW: EDIT SERVICE STATES ---
+  // Edit Service States
   const [editingService, setEditingService] = useState(null);
   const [editForm, setEditForm] = useState({ title: "", price: "", description: "" });
   const [editFile, setEditFile] = useState(null);
@@ -62,8 +62,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
     try {
       const statusToSend = newStatus === "ACCEPTED" ? "CONFIRMED" : newStatus;
       await BookingAPI.updateStatus(bookingId, { status: statusToSend });
-      if (newStatus === "REJECTED") setRequests(requests.filter(req => req.id !== bookingId));
-      else setRequests(requests.map(req => req.id === bookingId ? { ...req, bookingStatus: "CONFIRMED" } : req));
+      if (newStatus === "REJECTED") {
+        setRequests(requests.filter(req => req.id !== bookingId));
+      } else {
+        setRequests(requests.map(req => req.id === bookingId ? { ...req, bookingStatus: "CONFIRMED" } : req));
+      }
     } catch (error) { window.alert(`Failed to update request.`); }
   };
 
@@ -82,26 +85,33 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
       formData.append("otp", otpCode);
       if (beforeImage) formData.append("beforeImages", beforeImage);
       if (afterImage) formData.append("afterImages", afterImage);
+      
       await BookingAPI.completeBooking(completingJobId, formData);
       
       window.alert("Service successfully completed!");
-      setRequests(requests.map(req => req.id === completingJobId ? { ...req, bookingStatus: "COMPLETED" } : req));
+      setRequests(requests.map(req => req.id === completingJobId ? { ...req, bookingStatus: "COMPLETED", beforeImages: beforeImage ? URL.createObjectURL(beforeImage) : req.beforeImages, afterImages: afterImage ? URL.createObjectURL(afterImage) : req.afterImages } : req));
       setCompletingJobId(null); setOtpCode(""); setBeforeImage(null); setAfterImage(null);
       refreshDashboardData(); 
     } catch (error) { window.alert(error.message || "Invalid OTP. Please check with the customer."); } 
     finally { setIsSubmittingOtp(false); }
   };
 
-  // --- NEW: HANDLE EDIT SUBMISSION ---
+  const handleDeleteCard = (id) => {
+    const newHidden = [...hiddenIds, id];
+    setHiddenIds(newHidden);
+    localStorage.setItem("hiddenProviderBookings", JSON.stringify(newHidden));
+  };
+
+  // HANDLE EDIT SUBMISSION
   const handleEditSubmit = async () => {
     if (!editForm.price || editForm.price <= 0) return alert("Price must be greater than 0.");
     if (!editForm.description.trim()) return alert("Description is required.");
-    if (!editForm.title.trim()) return alert("Service Title is required."); // New validation
+    if (!editForm.title.trim()) return alert("Service Title is required.");
     
     setIsSubmittingEdit(true);
     try {
       const serviceRequest = {
-        serviceTitle: editForm.title, // Sends the updated title
+        serviceTitle: editForm.title, 
         serviceTypeId: editingService.serviceTypeId || editingService.serviceType?.id || 1, 
         price: Number(editForm.price),
         description: editForm.description
@@ -142,12 +152,12 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Provider Workspace</h1>
-        <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+        <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
           <Plus size={20} /> New Service
         </button>
       </div>
 
-      {/* --- ENHANCED 4-COLUMN STAT GRID --- */}
+      {/* --- STAT GRID --- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div onClick={() => setActiveTab("earnings")} className={`p-6 rounded-2xl border transition-all cursor-pointer dark:bg-gray-800 hover:shadow-md ${activeTab === "earnings" ? "border-green-500 shadow-md ring-2 ring-green-100 bg-green-50/30 dark:bg-green-900/10" : "border-gray-100 dark:border-gray-700 bg-white"}`}>
           <div className="flex flex-col gap-3">
@@ -179,7 +189,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
           </div>
         </div>
 
-        {/* NEW MY SERVICES TAB */}
+        {/* MY SERVICES TAB */}
         <div onClick={() => setActiveTab("services")} className={`p-6 rounded-2xl border transition-all cursor-pointer dark:bg-gray-800 hover:shadow-md ${activeTab === "services" ? "border-purple-500 shadow-md ring-2 ring-purple-100 bg-purple-50/30 dark:bg-purple-900/10" : "border-gray-100 dark:border-gray-700 bg-white"}`}>
           <div className="flex flex-col gap-3">
             <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center"><Settings2 size={24} /></div>
@@ -191,7 +201,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       </div>
 
-      {/* --- NEW: MY SERVICES VIEW --- */}
+      {/* --- MY SERVICES VIEW --- */}
       {activeTab === "services" && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-3 mb-6">
@@ -203,7 +213,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
                <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                <p className="text-gray-500 font-medium">You haven't added any services yet.</p>
-               <button onClick={() => setIsAddModalOpen(true)} className="mt-4 text-purple-600 font-bold hover:underline">Create your first service</button>
+               <button onClick={() => setIsAddModalOpen(true)} className="mt-4 text-purple-600 font-bold hover:underline cursor-pointer">Create your first service</button>
              </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -233,7 +243,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     
                     <button 
                       onClick={() => openEditModal(service)}
-                      className="w-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 dark:hover:text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group-hover:shadow-md"
+                      className="w-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 dark:hover:text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group-hover:shadow-md cursor-pointer"
                     >
                       <Edit3 size={18} /> Update Service
                     </button>
@@ -245,16 +255,12 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- NEW: ENHANCED GLASSMORPHISM EDIT MODAL --- */}
+      {/* --- EDIT SERVICE MODAL --- */}
       {editingService && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl border border-white/50 dark:border-gray-700/50 shadow-2xl rounded-[2rem] p-8 max-w-lg w-full relative overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border border-white/50 dark:border-gray-700/50 shadow-2xl rounded-[2rem] p-8 max-w-lg w-full relative overflow-hidden animate-in zoom-in-95 duration-300">
             
-            {/* Decorative Glowing Orbs */}
-            <div className="absolute -top-20 -left-20 w-48 h-48 bg-purple-500 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
-            <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-indigo-500 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
-
-            <button onClick={() => setEditingService(null)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white z-10 transition-colors">
+            <button onClick={() => setEditingService(null)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white z-10 transition-colors cursor-pointer">
               <XCircle size={28} />
             </button>
             
@@ -266,6 +272,17 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
               <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-8">Update the details for "{editingService.name || editingService.serviceTitle}".</p>
 
               <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5 ml-1">
+                    <FileText size={14}/> Service Title
+                  </label>
+                  <input 
+                    type="text" value={editForm.title} onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                    placeholder="e.g., Premium Home Deep Cleaning"
+                    className="w-full bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent px-4 py-3 rounded-xl outline-none transition font-medium" 
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5 ml-1">
                     <Tag size={14}/> Price (₹)
@@ -292,7 +309,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                   </label>
                   <input 
                     type="file" accept="image/*" onChange={(e) => setEditFile(e.target.files[0])} 
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-1" 
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-1 cursor-pointer" 
                   />
                 </div>
 
@@ -308,8 +325,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- PRE-EXISTING TABS (Requests, Earnings, etc.) --- */}
-      {/* Kept exactly as they were, conditionally rendered based on activeTab */}
+      {/* --- EARNINGS GRAPH --- */}
       {activeTab === "earnings" && (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm animate-in fade-in">
           <div className="flex items-center justify-between mb-8">
@@ -330,12 +346,13 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
+      {/* --- REQUESTS & HISTORY TABS --- */}
       {(activeTab === "requests" || activeTab === "completed" || activeTab === "overview") && (
         <div className="space-y-6 animate-in fade-in">
           <h2 className="text-xl font-bold dark:text-white">{activeTab === "completed" ? "Job History" : "Active Service Requests"}</h2>
           
           {visibleRequests.filter(job => activeTab === "completed" ? job.bookingStatus === "COMPLETED" : job.bookingStatus !== "COMPLETED").length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300"><Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" /><p className="text-gray-500">No requests to display.</p></div>
+            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700"><Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" /><p className="text-gray-500">No requests to display.</p></div>
           ) : (
             visibleRequests
               .filter(job => activeTab === "completed" ? job.bookingStatus === "COMPLETED" : job.bookingStatus !== "COMPLETED")
@@ -346,25 +363,25 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                 return (
                 <div key={job.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 relative">
                   
-                  <button onClick={() => handleDeleteCard(job.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-full shadow-sm" title="Delete from dashboard">
+                  <button onClick={() => handleDeleteCard(job.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-full shadow-sm cursor-pointer" title="Delete from dashboard">
                     <Trash2 size={18} />
                   </button>
 
                   <div className="flex justify-between items-start mb-4 pr-12">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{job.ServiceName || job.serviceOffering?.name || "Service Requested"}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{job.ServiceName || job.serviceOffering?.name || job.serviceOffering?.serviceTitle || "Service Requested"}</h3>
                       <p className="text-sm font-mono text-gray-500 mt-1">Booking ID: #{job.id}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">₹{providerCost}</p>
-                      <span className="inline-block mt-1 px-3 py-1 text-xs font-bold rounded-full uppercase bg-gray-100 text-gray-800">
+                      <span className="inline-block mt-1 px-3 py-1 text-xs font-bold rounded-full uppercase bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                         {job.bookingStatus}
                       </span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl mb-4 border border-gray-100 dark:border-gray-700">
-                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Time:</strong> <br/>{new Date(job.scheduledTime).toLocaleString()}</span></p>
+                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Time:</strong> <br/>{new Date(job.scheduledTime || job.scheduleTime).toLocaleString()}</span></p>
                     <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><MapPin className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Location:</strong> <br/>{job.workLocation}</span></p>
                     <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><User className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Customer:</strong> <br/>{job.customer?.firstName} {job.customer?.lastName}</span></p>
                     
@@ -400,14 +417,14 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
 
                   {job.bookingStatus === "PENDING" && (
                     <div className="flex gap-4 pt-2 mt-4">
-                      <button onClick={() => handleStatusChange(job.id, "ACCEPTED")} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition">Accept Request</button>
-                      <button onClick={() => handleStatusChange(job.id, "REJECTED")} className="flex-1 bg-red-50 text-red-600 py-3 rounded-xl font-bold hover:bg-red-100 transition">Reject Request</button>
+                      <button onClick={() => handleStatusChange(job.id, "ACCEPTED")} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition cursor-pointer">Accept Request</button>
+                      <button onClick={() => handleStatusChange(job.id, "REJECTED")} className="flex-1 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl font-bold hover:bg-red-100 transition cursor-pointer">Reject Request</button>
                     </div>
                   )}
 
                   {(job.bookingStatus === "CONFIRMED" || job.bookingStatus === "ACCEPTED") && (
                     <div className="pt-2 mt-4">
-                      <button onClick={() => handleInitiateCompletion(job.id)} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-bold hover:bg-green-600 transition flex justify-center items-center gap-2 shadow-sm">
+                      <button onClick={() => handleInitiateCompletion(job.id)} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-bold hover:bg-green-600 transition flex justify-center items-center gap-2 shadow-sm cursor-pointer">
                         <CheckCircle size={20} /> Mark as Complete
                       </button>
                     </div>
@@ -418,24 +435,76 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
+      {/* --- RESTORED COMPLETION MODAL WITH IMAGE UPLOADS --- */}
       {completingJobId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-           <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 shadow-2xl rounded-3xl p-8 max-w-sm w-full text-center relative overflow-hidden">
-             {/* ... pre-existing OTP logic inside the modal ... */}
-              <button onClick={() => { setCompletingJobId(null); setBeforeImage(null); setAfterImage(null); }} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 dark:hover:text-white z-10"><XCircle size={24} /></button>
-              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="text-indigo-600 dark:text-indigo-400 w-8 h-8" /></div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Complete Service</h3>
-              <input type="text" placeholder="OTP" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full px-4 py-4 text-center text-2xl tracking-[0.5em] font-bold border-2 border-white/50 bg-white/50 dark:bg-gray-800/50 rounded-xl mb-4 shadow-inner" maxLength={6} />
-              <button onClick={handleOtpSubmit} disabled={isSubmittingOtp} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center">
-                {isSubmittingOtp ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify & Complete"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+           <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 shadow-2xl rounded-3xl p-8 max-w-sm w-full relative overflow-hidden animate-in zoom-in-95">
+              
+              <button 
+                onClick={() => { setCompletingJobId(null); setBeforeImage(null); setAfterImage(null); setOtpCode(""); }} 
+                className="absolute top-5 right-5 text-gray-400 hover:text-gray-800 dark:hover:text-white z-10 transition cursor-pointer"
+              >
+                <XCircle size={24} />
+              </button>
+              
+              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <CheckCircle className="text-indigo-600 dark:text-indigo-400 w-8 h-8" />
+              </div>
+              
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Complete Service</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Enter the customer's OTP and upload your portfolio proof.</p>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                {/* OTP Input */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Customer OTP</label>
+                  <input 
+                    type="text" placeholder="0000" 
+                    value={otpCode} 
+                    onChange={(e) => setOtpCode(e.target.value)} 
+                    className="w-full px-4 py-3 text-center text-2xl tracking-[0.5em] font-black border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-xl outline-none focus:border-indigo-500 transition shadow-inner dark:text-white" 
+                    maxLength={6} 
+                  />
+                </div>
+
+                {/* Before Image */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Before Image <span className="text-gray-400 lowercase font-medium">(Optional)</span></label>
+                  <input 
+                    type="file" accept="image/*" 
+                    onChange={(e) => setBeforeImage(e.target.files[0])} 
+                    className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition border border-gray-200 dark:border-gray-700 rounded-xl p-1 bg-white dark:bg-gray-800 cursor-pointer" 
+                  />
+                </div>
+
+                {/* After Image */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">After Image <span className="text-green-500 lowercase font-medium">(Builds Portfolio)</span></label>
+                  <input 
+                    type="file" accept="image/*" 
+                    onChange={(e) => setAfterImage(e.target.files[0])} 
+                    className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition border border-gray-200 dark:border-gray-700 rounded-xl p-1 bg-white dark:bg-gray-800 cursor-pointer" 
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={handleOtpSubmit} 
+                disabled={isSubmittingOtp} 
+                className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:shadow-indigo-500/30 hover:bg-indigo-700 transition flex justify-center items-center gap-2 cursor-pointer"
+              >
+                {isSubmittingOtp ? <Loader2 className="animate-spin w-5 h-5" /> : <><CheckCircle size={18}/> Verify & Complete</>}
               </button>
           </div>
         </div>
       )}
 
+      {/* --- PREVIEW MODAL --- */}
       {previewImage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setPreviewImage(null)}>
-          <button onClick={() => setPreviewImage(null)} className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 p-2 rounded-full z-10"><XCircle size={32} /></button>
+          <button onClick={() => setPreviewImage(null)} className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 p-2 rounded-full z-10 cursor-pointer"><XCircle size={32} /></button>
           <img src={previewImage} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()} />
         </div>
       )}

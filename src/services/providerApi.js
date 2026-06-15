@@ -69,11 +69,20 @@ export const ProviderAPI = {
 
   // Add a new service offering (UPDATED for FormData)
   addService: async (formData) => {
-    return fetchWithAuth(`${PROVIDER_URL}/addService`, {
+    const user = JSON.parse(localStorage.getItem("nearEaseUser"));
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}/api/provider/addService`, {
       method: "POST",
-      headers: getAuthHeadersOnly(), // Now safely defined above!
-      body: formData, 
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+        },
+      body: formData,
     });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to add service");
+    }
+    return await response.json();
   },
 
   // Get Provider Dashboard stats

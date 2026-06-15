@@ -1,51 +1,98 @@
 import React from "react";
-import { Star, MapPin } from "lucide-react";
+import { Star, MapPin, Eye, ArrowRight, User } from "lucide-react";
 
 export default function ServiceCard({ item, onCardClick, onPreviewClick }) {
-  const displayImage = item.imageUrl || (item.images && item.images[0]) || "https://via.placeholder.com/400x300?text=No+Image";
-  
-  // THE FIX: Smart check for average rating. Returns "New" if 0 or null.
-  const getRating = () => {
-    const avg = item.provider?.averageRating || item.providerProfile?.averageRating || item.rating;
-    return avg > 0 ? Number(avg).toFixed(1) : "New";
-  };
+  if (!item) return null;
 
-  const ratingValue = getRating();
+  // Robustly extract provider details
+  const provider = item.provider || item.providerProfile || {};
+  const providerName = provider.firstName ? `${provider.firstName} ${provider.lastName || ''}`.trim() : (provider.name || "Verified Professional");
+  
+  // Extract Rating properly
+  const avgRating = provider.averageRating || item.averageRating || 0;
+  const reviewCount = provider.reviewCount || item.reviewCount || 0;
+  
+  // Ensure we check strictly for a number > 0 to show the rating
+  const hasRating = Number(avgRating) > 0;
 
   return (
-    <div 
-      onClick={() => onCardClick(item)} 
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col h-full cursor-pointer transform hover:-translate-y-1"
-    >
-      <div className="relative h-48 w-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-        <img src={displayImage} alt={item.name || "Service"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-      </div>
-
-      <div className="p-5 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-2 gap-3">
-          <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight line-clamp-2">
-            {item.serviceTitle || item.ServiceTitle || item.name || item.serviceType?.name || "Professional Service"}
-          </h3>
-          <div className={`flex items-center px-2 py-1 rounded-lg shrink-0 ${ratingValue === "New" ? "bg-amber-100 dark:bg-amber-900/40" : "bg-yellow-50 dark:bg-yellow-900/30"}`}>
-            <Star size={14} className={`${ratingValue === "New" ? "text-amber-500" : "text-yellow-500 fill-current"} mr-1`} />
-            <span className={`text-sm font-bold ${ratingValue === "New" ? "text-amber-700 dark:text-amber-400" : "text-yellow-700 dark:text-yellow-500"}`}>
-              {ratingValue}
-            </span>
+    <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full hover:-translate-y-1">
+      
+      {/* Image Area */}
+      <div className="relative aspect-[4/3] w-full bg-gray-100 dark:bg-gray-900 overflow-hidden">
+        {item.imageUrl ? (
+          <img 
+            src={item.imageUrl} 
+            alt={item.serviceTitle || item.name || "Service"} 
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-indigo-50 dark:bg-gray-800">
+             <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-full shadow-sm flex items-center justify-center">
+                <span className="text-2xl font-black text-indigo-200 dark:text-gray-500">
+                   {(item.serviceTitle || item.name || "S").charAt(0).toUpperCase()}
+                </span>
+             </div>
           </div>
+        )}
+        
+        {/* Category Tag */}
+        <div className="absolute top-4 left-4 z-10">
+           <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl text-indigo-600 dark:text-indigo-400 shadow-sm border border-white/20">
+             {item.serviceTypename || item.serviceType?.name || "Service"}
+           </span>
+        </div>
+
+        {/* Quick Preview Button */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); onPreviewClick(item); }}
+          className="absolute inset-0 bg-indigo-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 backdrop-blur-[2px]"
+        >
+          <span className="bg-white text-indigo-600 px-6 py-3 rounded-full font-bold flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-lg">
+            <Eye size={18} /> Quick Look
+          </span>
+        </button>
+      </div>
+      
+      {/* Content Area */}
+      <div className="p-6 flex-1 flex flex-col cursor-pointer" onClick={() => onCardClick(item)}>
+        <div className="flex justify-between items-start gap-4 mb-3">
+          <h3 className="font-extrabold text-gray-900 dark:text-white text-lg leading-tight line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+            {item.serviceTitle || item.name || item.serviceType?.name || "Professional Service"}
+          </h3>
+          
+          {/* THE FIX: Show rating badge if > 0, otherwise show 'New' */}
+          {hasRating ? (
+            <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-1 rounded-lg shrink-0 border border-yellow-100 dark:border-yellow-800/50">
+              <Star size={14} className="fill-yellow-400 text-yellow-400" />
+              <span className="font-bold text-yellow-700 dark:text-yellow-400 text-sm">
+                {Number(avgRating).toFixed(1)}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1 rounded-lg shrink-0 border border-amber-100 dark:border-amber-800/50">
+              <Star size={12} className="text-amber-500" />
+              <span className="font-bold text-amber-700 dark:text-amber-400 text-xs">New</span>
+            </div>
+          )}
+        </div>
+
+        {/* Location */}
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
+          <MapPin size={16} className="text-gray-400" />
+          <span className="truncate">{item.location || provider.city || provider.address || "Location unavailable"}</span>
         </div>
         
-        <p className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm font-medium mb-4">
-          <MapPin size={16} className="text-red-400 shrink-0" /> {item.location || item.provider?.address || "Remote / On-site"}
-        </p>
-
-        <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-          <span className="font-extrabold text-lg text-gray-900 dark:text-white">₹{item.price || 0}</span>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onPreviewClick(item); }}
-            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-gray-700 dark:text-indigo-400 dark:hover:bg-gray-600 px-5 py-2 rounded-xl font-semibold transition-colors shadow-sm cursor-pointer"
-          >
-            Preview
-          </button>
+        {/* Footer Area */}
+        <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Starting from</span>
+            <span className="text-2xl font-black text-gray-900 dark:text-white">₹{item.price}</span>
+          </div>
+          
+          <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-sm">
+            <ArrowRight size={18} className="transform group-hover:translate-x-1 transition-transform" />
+          </div>
         </div>
       </div>
     </div>

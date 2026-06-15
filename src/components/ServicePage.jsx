@@ -1,126 +1,259 @@
 import React, { useState, useEffect } from "react";
-import { Star, MapPin, ArrowLeft, Phone, MessageCircle, Flashlight, AlertCircle } from "lucide-react";
-import PortfolioGallery from "./PortfolioGallery";
-import ReviewList from "./ReviewList";
+import { 
+  ArrowLeft, Star, MapPin, CheckCircle, ShieldCheck, 
+  Clock, CreditCard, ChevronRight, User as UserIcon, Calendar, MessageSquare
+} from "lucide-react";
+import { PublicAPI } from "../services/publicApi";
+import GoBackButton from "./GoBackButton";
 
 export default function ServicePage({ service, onBack, onProceedToCheckout, onLoginRedirect }) {
-  // State for the custom, non-alert authentication warning message
-  const [authMessage, setAuthMessage] = useState("");
-
-  // Extract the single main thumbnail image
-  const mainImage = service?.imageUrl || "https://via.placeholder.com/800x400?text=No+Image";
-
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-
-  // THE FIX: Restored the login interceptor!
-  const handleBookNow = () => {
-    const userStr = localStorage.getItem("nearEaseUser");
+  const [reviews, setReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
     
-    // 1. Check if they are logged in
-    if (!userStr) {
-      setAuthMessage("Please log in first to book this service. Redirecting...");
-      setTimeout(() => {
-        if (typeof onLoginRedirect === "function") {
-          onLoginRedirect(); 
-        } else {
-          window.location.href = "/login"; 
+    // Fetch reviews specifically for this provider
+    const fetchReviews = async () => {
+      if (service?.provider?.id || service?.providerProfile?.id) {
+        setIsLoadingReviews(true);
+        try {
+          const providerId = service.provider?.id || service.providerProfile?.id;
+          const reviewsData = await PublicAPI.getProviderReviews(providerId);
+          setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+        } catch (error) {
+          console.error("Failed to fetch reviews", error);
+        } finally {
+          setIsLoadingReviews(false);
         }
-      }, 1500);
-      return;
-    }
-
-    const currentUser = JSON.parse(userStr);
-
-    // 2. THE FIX: Check if the user is trying to book their own service
-    const isOwnService = 
-      currentUser.id === service?.provider?.user?.id || 
-      currentUser.email === service?.provider?.user?.email;
-
-    if (isOwnService) {
-      window.alert("You cannot book your own service!"); // Triggers GlobalAlert
-      return; 
-    }
-
-    // 3. If everything is fine, proceed to checkout
-    onProceedToCheckout(service);
-  };
+      } else {
+        setIsLoadingReviews(false);
+      }
+    };
+    
+    fetchReviews();
+  }, [service]);
 
   if (!service) return null;
 
+  const user = JSON.parse(localStorage.getItem("nearEaseUser"));
+  const provider = service.provider || service.providerProfile || {};
+  const providerName = provider.firstName ? `${provider.firstName} ${provider.lastName || ''}`.trim() : (provider.name || "Professional Provider");
+  
+  // THE FIX: Accurate Rating Extraction
+  const avgRating = provider.averageRating || service.averageRating || 0;
+  const reviewCount = provider.reviewCount || service.reviewCount || 0;
+  const hasRating = Number(avgRating) > 0;
+
+  const handleBooking = () => {
+    if (!user) {
+      onLoginRedirect();
+      return;
+    }
+    onProceedToCheckout();
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-500">
-      <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 font-medium mb-8 transition cursor-pointer">
-        <ArrowLeft size={20} /> Back to Search
-      </button>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Left Column: Gallery & Reviews */}
-        <div className="space-y-8">
-          <div className="w-full aspect-video rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-md">
-            <img src={mainImage} alt={service.name} className="w-full h-full object-cover" />
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <ReviewList providerId={service?.provider?.id} />
-          </div>
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-24 animate-in fade-in duration-500">
+      {/* Top Banner & Image */}
+      <div className="relative h-[40vh] md:h-[50vh] w-full bg-gray-900 overflow-hidden">
+        {service.imageUrl ? (
+          <img src={service.imageUrl} alt={service.serviceTitle || service.name} className="w-full h-full object-cover opacity-70" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-tr from-indigo-900 to-purple-800 opacity-90"></div>
+        )}
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
+        
+        {/* Navigation */}
+        <div className="absolute top-0 left-0 w-full p-4 sm:p-6 lg:px-8 max-w-7xl mx-auto flex justify-between items-center z-10">
+          <button 
+            onClick={onBack} 
+            className="flex items-center gap-2 text-white bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-full font-bold transition-all cursor-pointer border border-white/20"
+          >
+            <ArrowLeft size={18} /> Back to Search
+          </button>
         </div>
+      </div>
 
-        {/* Right Column: Details & Booking */}
-        <div className="flex flex-col">
-          <div className="flex gap-2 mb-4">
-            <span className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold px-3 py-1 rounded-full uppercase tracking-wide text-xs w-fit">
-              {service.serviceType?.category?.name || "Service"}
-            </span>
-          </div>
-
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight">
-            {service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service"}
-          </h1>
-
-          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-            <div className="flex items-center bg-yellow-100 dark:bg-yellow-900/30 px-4 py-1.5 rounded-full w-fit">
-              <Star size={18} className="text-yellow-500 fill-current mr-2" />
-              <span className="font-black text-yellow-700 dark:text-yellow-500 text-lg">
-                 {service.provider?.averageRating > 0 ? service.provider.averageRating.toFixed(1) : "New"}
-              </span>
-            </div>
-            <span className="text-gray-500 dark:text-gray-400 font-medium">
-               {service.provider?.reviewCount || 0} Verified Reviews
-            </span>
-          </div>
+      {/* Main Content Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 relative z-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-gray-500 dark:text-gray-400 flex items-center gap-2 font-medium text-lg">
-              <MapPin size={20} className="text-red-400 shrink-0" /> {service.location || service.provider?.address || "Remote / On-site"}
-            </p>
-            <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400">₹{service.price || 0}</p>
-          </div>
-          
-          <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-8 text-lg">
-            {service.description || "High quality service guaranteed. Please review the portfolio below and book a slot that works for you."}
-          </p>
-
-          {/* This component automatically fetches and displays the Before/After images uploaded during job completion! */}
-          <div className="mb-8">
-            <PortfolioGallery providerId={service?.provider?.id} />
-          </div>
-
-          <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-800">
+          {/* Left Column: Details */}
+          <div className="lg:col-span-2 space-y-8">
             
-            {/* Restored inline authentication message */}
-            {authMessage && (
-              <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 animate-in slide-in-from-bottom-2">
-                <AlertCircle size={18} /> {authMessage}
+            {/* Header Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-xl border border-gray-100 dark:border-gray-700">
+              <div className="flex flex-wrap gap-3 mb-4">
+                <span className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
+                  {service.serviceTypename || service.serviceType?.name || "Service"}
+                </span>
+                
+                {/* THE FIX: Display rating correctly in the Header Card */}
+                {hasRating ? (
+                  <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1.5 rounded-full text-sm font-bold border border-yellow-100 dark:border-yellow-800/50">
+                    <Star size={16} className="fill-yellow-400 text-yellow-400" />
+                    <span>{Number(avgRating).toFixed(1)}</span>
+                    <span className="text-gray-400 dark:text-gray-500 font-medium ml-1">({reviewCount} reviews)</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full text-sm font-bold border border-amber-100 dark:border-amber-800/50">
+                    <Star size={14} className="text-amber-500" />
+                    New Provider
+                  </div>
+                )}
               </div>
-            )}
 
-            <button 
-              onClick={handleBookNow} 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl transition shadow-xl text-lg flex justify-center items-center gap-3 transform hover:-translate-y-1 cursor-pointer"
-            >
-              <Flashlight size={20} /> Book Now
-            </button>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight">
+                {service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service"}
+              </h1>
+              
+              <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-lg mb-8 font-medium">
+                <MapPin size={20} className="text-indigo-500" />
+                {service.location || provider.city || provider.address || "Location unavailable"}
+              </div>
+
+              <div className="prose prose-lg dark:prose-invert max-w-none">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">About this service</h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  {service.description || "No description provided."}
+                </p>
+              </div>
+            </div>
+
+            {/* Provider Details Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Meet Your Professional</h3>
+              
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-gray-800 shadow-lg">
+                  {provider.imageUrl ? (
+                    <img src={provider.imageUrl} alt={providerName} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-3xl font-black">{providerName.charAt(0)}</span>
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{providerName}</h4>
+                    {provider.verified && (
+                      <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded-full" title="Verified Provider">
+                        <ShieldCheck size={18} />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-4 text-sm font-medium text-gray-600 dark:text-gray-400 mb-6">
+                    <div className="flex items-center gap-1.5">
+                       <CheckCircle size={16} className="text-green-500" /> {provider.completedJobs || 0} Jobs Completed
+                    </div>
+                    {provider.experience && (
+                      <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
+                         {provider.experience} Experience
+                      </div>
+                    )}
+                  </div>
+                  
+                  {provider.bio && (
+                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed italic border-l-4 border-indigo-100 dark:border-indigo-900/50 pl-4 py-1">
+                      "{provider.bio}"
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Customer Reviews</h3>
+                <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-4 py-1.5 rounded-full text-sm font-bold">
+                  {reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'}
+                </span>
+              </div>
+              
+              {isLoadingReviews ? (
+                <div className="flex justify-center py-12"><Loader2 className="animate-spin text-indigo-600" /></div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+                  <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 font-medium">No reviews yet. Be the first to book and review!</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-full flex items-center justify-center font-black">
+                            {(review.customerName || "U").charAt(0)}
+                          </div>
+                          <div>
+                            <h5 className="font-bold text-gray-900 dark:text-white">{review.customerName || "Verified Customer"}</h5>
+                            <p className="text-xs text-gray-500">{review.bookingDate ? new Date(review.bookingDate).toLocaleDateString() : ""}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg border border-yellow-100 dark:border-yellow-800/50">
+                          <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                          <span className="font-bold text-yellow-700 dark:text-yellow-400 text-sm">{review.rating}.0</span>
+                        </div>
+                      </div>
+                      <p className="text-gray-700 dark:text-gray-300 italic">"{review.comment}"</p>
+                      
+                      {review.providerReply && (
+                        <div className="mt-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-indigo-50 dark:border-indigo-900/30 flex gap-3 shadow-sm">
+                          <MessageSquare className="text-indigo-400 mt-1 shrink-0" size={18} />
+                          <div>
+                            <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Provider Response</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{review.providerReply}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
           </div>
+          
+          {/* Right Column: Checkout Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 shadow-2xl border border-gray-100 dark:border-gray-700 sticky top-28">
+              <h3 className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider text-sm mb-2">Service Total</h3>
+              <div className="text-5xl font-black text-gray-900 dark:text-white mb-6">
+                ₹{service.price}
+              </div>
+              
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                  <ShieldCheck className="text-emerald-500 shrink-0" size={24} />
+                  <span className="text-sm font-medium">NearEase Escrow Protection included.</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                  <Clock className="text-blue-500 shrink-0" size={24} />
+                  <span className="text-sm font-medium">Schedule exactly when you need it.</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleBooking}
+                className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-indigo-700 transition shadow-xl shadow-indigo-500/30 flex justify-center items-center gap-2 transform hover:-translate-y-1 cursor-pointer"
+              >
+                Proceed to Booking <ChevronRight size={20} />
+              </button>
+              
+              {!user && (
+                <p className="text-center text-sm text-gray-500 mt-4">
+                  You will be prompted to login to secure your booking.
+                </p>
+              )}
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>
