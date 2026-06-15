@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { 
-  ArrowLeft, Star, MapPin, CheckCircle, ShieldCheck, Loader2
+  ArrowLeft, Star, MapPin, CheckCircle, ShieldCheck, Loader2,
   Clock, CreditCard, ChevronRight, MessageSquare
 } from "lucide-react";
 import { PublicAPI } from "../services/publicApi";
