@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Briefcase, DollarSign, Clock, CheckCircle, MapPin, 
   Calendar, User, Loader2, Plus, TrendingUp, XCircle, 
-  FileText, Trash2, Image as ImageIcon, Maximize2, 
-  Settings2, Edit3, Save, Tag
+  FileText, Trash2, Image as ImageIcon, Settings2, Edit3, Save, Tag
 } from "lucide-react";
 import { ProviderAPI } from "../services/providerApi";
 import { BookingAPI } from "../services/bookingApi";
@@ -77,9 +76,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
     } catch (error) { window.alert(error.message || "Failed to send OTP to the customer."); }
   };
 
+  // --- THE FIX: BULLETPROOF OTP SUBMISSION ---
   const handleOtpSubmit = async () => {
     if (!otpCode || otpCode.length < 4) return window.alert("Please enter a valid OTP.");
     setIsSubmittingOtp(true);
+    
     try {
       const formData = new FormData();
       formData.append("otp", otpCode);
@@ -89,11 +90,26 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
       await BookingAPI.completeBooking(completingJobId, formData);
       
       window.alert("Service successfully completed!");
-      setRequests(requests.map(req => req.id === completingJobId ? { ...req, bookingStatus: "COMPLETED", beforeImages: beforeImage ? URL.createObjectURL(beforeImage) : req.beforeImages, afterImages: afterImage ? URL.createObjectURL(afterImage) : req.afterImages } : req));
-      setCompletingJobId(null); setOtpCode(""); setBeforeImage(null); setAfterImage(null);
+      
+      // Safely update local state without objectURL crashes
+      setRequests(requests.map(req => req.id === completingJobId ? { ...req, bookingStatus: "COMPLETED" } : req));
+      
+      // Clear forms and close modal
+      setCompletingJobId(null); 
+      setOtpCode(""); 
+      setBeforeImage(null); 
+      setAfterImage(null);
+      
+      // Pull fresh data from the server
       refreshDashboardData(); 
-    } catch (error) { window.alert(error.message || "Invalid OTP. Please check with the customer."); } 
-    finally { setIsSubmittingOtp(false); }
+      
+    } catch (error) { 
+      // This will log the actual error to your F12 console so you know exactly what failed!
+      console.error("OTP Verification Error:", error);
+      window.alert(error.message || "Invalid OTP. Please check with the customer."); 
+    } finally { 
+      setIsSubmittingOtp(false); 
+    }
   };
 
   const handleDeleteCard = (id) => {
@@ -102,7 +118,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
     localStorage.setItem("hiddenProviderBookings", JSON.stringify(newHidden));
   };
 
-  // HANDLE EDIT SUBMISSION
   const handleEditSubmit = async () => {
     if (!editForm.price || editForm.price <= 0) return alert("Price must be greater than 0.");
     if (!editForm.description.trim()) return alert("Description is required.");
@@ -219,7 +234,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {dashboardData.activeServices.map((service) => (
                 <div key={service.id} className="bg-white dark:bg-gray-800 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all group flex flex-col">
-                  {/* Service Image */}
                   <div className="relative h-48 w-full bg-gray-100 dark:bg-gray-900 overflow-hidden">
                     {service.imageUrl ? (
                       <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -231,7 +245,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     </span>
                   </div>
                   
-                  {/* Service Info */}
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">{service.name || service.serviceTitle}</h3>
