@@ -18,7 +18,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
       const providerId = service?.providerProfile?.id || service?.provider?.id;
 
       if (providerId) {
-        // 1. Fetch Reviews (Now that the endpoint exists in publicApi.js)
+        // 1. Fetch Reviews
         try {
           if (typeof PublicAPI.getProviderReviews === "function") {
             const fetchedReviews = await PublicAPI.getProviderReviews(providerId);
@@ -53,9 +53,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   };
   const user = safeGetUser();
 
-  // --- FIX: PROPER JSON MAPPING FOR SPRING BOOT MODELS ---
   const provider = service.providerProfile || service.provider || {};
-  const providerUser = provider.user || {}; // Data comes from ProviderProfile -> User
+  const providerUser = provider.user || {}; 
   
   const providerName = String(
     providerUser.firstName 
@@ -202,7 +201,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             </div>
 
-            {/* PORTFOLIO SECTION */}
+            {/* --- FIX 1: PERFECT DTO MAPPING FOR PORTFOLIO --- */}
             {portfolio.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-6">
@@ -212,9 +211,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {portfolio.map((item, idx) => {
-                    const imgSrc = typeof item === 'string' 
-                      ? item 
-                      : (item?.afterImages || item?.beforeImages || item?.imageUrl || item?.image);
+                    // Accurately maps the 'afterImageUrl' and 'beforeImageUrl' from ProviderPortfolioDto.java
+                    const imgSrc = item?.afterImageUrl || item?.beforeImageUrl;
 
                     if (!imgSrc) return null;
 
@@ -236,7 +234,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             )}
 
-            {/* REVIEWS SECTION */}
+            {/* --- FIX 2: PERFECT DTO MAPPING FOR REVIEWS --- */}
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Customer Reviews</h3>
@@ -257,11 +255,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                   {reviews.map((review, idx) => {
                     const revRating = Number(review.rating || 0);
                     
-                    // FIX: Maps customer name correctly from Review -> Booking -> Customer -> firstName
-                    const customerName = review.booking?.customer?.firstName 
-                      ? `${review.booking.customer.firstName} ${review.booking.customer.lastName || ''}`.trim()
-                      : "Verified Customer";
-                      
+                    // Maps the 'CustomerName' from ReviewResponseDto.java
+                    const customerName = String(review.CustomerName || review.customerName || "Verified Customer");
                     const revInitial = customerName.charAt(0).toUpperCase();
                     
                     return (
