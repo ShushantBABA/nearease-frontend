@@ -54,9 +54,12 @@ export const PublicAPI = {
   // --- THE FIX: ADDED MISSING REVIEW ENDPOINT ---
   getProviderReviews: async (providerId) => {
     try {
-      // Adjust this URL if your backend uses a different path for reviews
-      const response = await fetch(`${BASE_URL}/api/public/providers/${providerId}/reviews`);
-      if (!response.ok) throw new Error("Failed to fetch reviews");
+      // Changed the URL to match your existing ReviewController mapping!
+      const response = await fetch(`${BASE_URL}/api/reviews/provider/${providerId}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch reviews");
+      }
       return await response.json();
     } catch (error) {
       console.error("Error in getProviderReviews:", error);
