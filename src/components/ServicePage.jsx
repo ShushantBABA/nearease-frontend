@@ -64,7 +64,9 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   
   const providerInitial = providerName.charAt(0).toUpperCase();
 
-  const avgRating = Number(provider.averageRating || service.averageRating || 0);
+  const avgRating = reviews.length > 0 
+    ? (reviews.reduce((acc, rev) => acc + Number(rev.rating || 0), 0) / reviews.length)
+    : Number(provider.averageRating || service.averageRating || 0);
   const hasRating = !isNaN(avgRating) && avgRating > 0;
   
   const rawJobsCount = Number(provider.completedJobs || 0);

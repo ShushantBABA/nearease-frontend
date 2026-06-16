@@ -167,6 +167,12 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Provider Workspace</h1>
+        <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1 rounded-full border border-yellow-200 dark:border-yellow-800/50 shadow-sm">
+          <Star size={16} className="fill-yellow-400 text-yellow-400" />
+          <span className="font-bold text-sm">
+            {dashboardData?.averageRating ? Number(dashboardData.averageRating).toFixed(1) : "New"}
+          </span>
+        </div>
         <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
           <Plus size={20} /> New Service
         </button>
@@ -394,9 +400,30 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl mb-4 border border-gray-100 dark:border-gray-700">
-                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><Calendar className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Time:</strong> <br/>{new Date(job.scheduledTime || job.scheduleTime).toLocaleString()}</span></p>
-                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><MapPin className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Location:</strong> <br/>{job.workLocation}</span></p>
-                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"><User className="w-4 h-4 text-gray-400 mt-0.5" /> <span><strong>Customer:</strong> <br/>{job.customer?.firstName} {job.customer?.lastName}</span></p>
+                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <Calendar className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" /> 
+                      <span><strong className="text-gray-800 dark:text-gray-200">Time:</strong> <br/>{new Date(job.scheduledTime || job.scheduleTime).toLocaleString()}</span>
+                    </p>
+                    
+                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" /> 
+                      <span><strong className="text-gray-800 dark:text-gray-200">Location:</strong> <br/>{job.workLocation || "N/A"}</span>
+                    </p>
+                    
+                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" /> 
+                      <span><strong className="text-gray-800 dark:text-gray-200">Customer Name:</strong> <br/>{job.customer?.firstName} {job.customer?.lastName}</span>
+                    </p>
+                    
+                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <Phone className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" /> 
+                      <span><strong className="text-gray-800 dark:text-gray-200">Phone Number:</strong> <br/>{job.customer?.phone || "Not Provided"}</span>
+                    </p>
+                    
+                    <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300 sm:col-span-2 lg:col-span-1">
+                      <Mail className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" /> 
+                      <span className="break-all"><strong className="text-gray-800 dark:text-gray-200">Email Address:</strong> <br/>{job.customer?.email || "Not Provided"}</span>
+                    </p>
                     
                     {note && (
                       <p className="flex items-start gap-2 text-sm text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg md:col-span-2 mt-2">

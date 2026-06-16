@@ -473,19 +473,19 @@ export default function App() {
                 <h4 className="font-bold text-gray-900 dark:text-white mb-6">Contact Us</h4>
                 <div className="space-y-3">
                   {/* Person 1 */}
-                  <a href="mailto:person1@nearease.com" className="group flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/50 dark:hover:bg-indigo-900/20 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50 cursor-pointer block">
+                  <a href="singhashish.cs@gmail.com" className="group flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/50 dark:hover:bg-indigo-900/20 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50 cursor-pointer block">
                     <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 shadow-inner">
                       <span className="font-black text-lg">A</span>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">Ashish Kumar</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Co-Founder</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Founder</p>
                       <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">singhashish.cs@gmail.com</p>
                     </div>
                   </a>
 
                   {/* Person 2 */}
-                  <a href="mailto:person2@nearease.com" className="group flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/50 dark:hover:bg-indigo-900/20 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50 cursor-pointer block">
+                  <a href="shushant19102000@gmail.com" className="group flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/50 dark:hover:bg-indigo-900/20 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50 cursor-pointer block">
                     <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 shadow-inner">
                       <span className="font-black text-lg">S</span>
                     </div>
