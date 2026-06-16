@@ -12,9 +12,12 @@ export default function ServiceCard({ item, onCardClick, onPreviewClick, service
   const avgRating = Number(rawRating);
   const hasRating = !isNaN(avgRating) && avgRating > 0;
 
-  const title = String(item.serviceTitle || item.name || item.serviceType?.name || "Professional Service");
-  const category = String(item.serviceTypename || item.serviceType?.name || "Service");
-  const location = String(item.location || provider.city || provider.address || "Location unavailable");
+  // Safely extract fields matching the variables used in the JSX below
+  const safeTitle = String(item.serviceTitle || item.name || item.serviceType?.name || "Professional Service");
+  const safeCategory = String(item.serviceTypename || item.serviceType?.name || "Service");
+  const safeLocation = String(item.location || provider.city || provider.address || "Location unavailable");
+  const safeInitial = safeTitle.charAt(0).toUpperCase() || "S";
+  
   const price = item.price || 0;
   const imageUrl = item.imageUrl || service?.imageUrl;
 
@@ -23,9 +26,9 @@ export default function ServiceCard({ item, onCardClick, onPreviewClick, service
       
       {/* Image Area */}
       <div className="relative aspect-[4/3] w-full bg-gray-100 dark:bg-gray-900 overflow-hidden">
-        {item.imageUrl ? (
+        {imageUrl ? (
           <img 
-            src={item.imageUrl} 
+            src={imageUrl} 
             alt={safeTitle} 
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
           />
@@ -89,7 +92,7 @@ export default function ServiceCard({ item, onCardClick, onPreviewClick, service
         <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Starting from</span>
-            <span className="text-2xl font-black text-gray-900 dark:text-white">₹{Number(item.price || 0)}</span>
+            <span className="text-2xl font-black text-gray-900 dark:text-white">₹{Number(price)}</span>
           </div>
           
           <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-sm">
