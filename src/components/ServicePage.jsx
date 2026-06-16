@@ -15,27 +15,25 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
     
     const fetchPageData = async () => {
       setIsLoadingData(true);
-      const providerId = service?.provider?.id || service?.providerProfile?.id;
-      const serviceId = service?.id;
-
-      try {
-        let fetchedReviews = [];
-        if (typeof PublicAPI.getServiceReviews === "function") {
-          fetchedReviews = await PublicAPI.getServiceReviews(serviceId);
-        } else if (typeof PublicAPI.getProviderReviews === "function") {
-          fetchedReviews = await PublicAPI.getProviderReviews(providerId);
-        } else if (typeof PublicAPI.getReviews === "function") {
-          fetchedReviews = await PublicAPI.getReviews(serviceId);
-        }
-        setReviews(Array.isArray(fetchedReviews) ? fetchedReviews : []);
-      } catch (error) {
-        console.error("Failed to fetch reviews", error);
-      }
+      const providerId = service?.providerProfile?.id || service?.provider?.id;
 
       if (providerId) {
+        // 1. Fetch Reviews (Now that the endpoint exists in publicApi.js)
         try {
-          const fetchedPortfolio = await PublicAPI.getProviderPortfolio(providerId);
-          setPortfolio(Array.isArray(fetchedPortfolio) ? fetchedPortfolio : []);
+          if (typeof PublicAPI.getProviderReviews === "function") {
+            const fetchedReviews = await PublicAPI.getProviderReviews(providerId);
+            setReviews(Array.isArray(fetchedReviews) ? fetchedReviews : []);
+          }
+        } catch (error) {
+          console.error("Failed to fetch reviews", error);
+        }
+
+        // 2. Fetch Provider Portfolio
+        try {
+          if (typeof PublicAPI.getProviderPortfolio === "function") {
+             const fetchedPortfolio = await PublicAPI.getProviderPortfolio(providerId);
+             setPortfolio(Array.isArray(fetchedPortfolio) ? fetchedPortfolio : []);
+          }
         } catch (error) {
           console.error("Failed to fetch portfolio", error);
         }
@@ -55,8 +53,16 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   };
   const user = safeGetUser();
 
-  const provider = service.provider || service.providerProfile || {};
-  const providerName = String(provider.firstName ? `${provider.firstName} ${provider.lastName || ''}`.trim() : (provider.name || "Professional Provider"));
+  // --- FIX: PROPER JSON MAPPING FOR SPRING BOOT MODELS ---
+  const provider = service.providerProfile || service.provider || {};
+  const providerUser = provider.user || {}; // Data comes from ProviderProfile -> User
+  
+  const providerName = String(
+    providerUser.firstName 
+      ? `${providerUser.firstName} ${providerUser.lastName || ''}`.trim() 
+      : "Professional Provider"
+  );
+  
   const providerInitial = providerName.charAt(0).toUpperCase();
 
   const avgRating = Number(provider.averageRating || service.averageRating || 0);
@@ -65,23 +71,17 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
   const rawJobsCount = Number(provider.completedJobs || 0);
   const displayJobs = rawJobsCount > 0 ? rawJobsCount : (portfolio.length > 0 ? portfolio.length : (reviews.length > 0 ? reviews.length : 0));
 
-  const safeTitle = String(service.serviceTitle || service.ServiceTitle || service.name || service.serviceType?.name || "Professional Service");
-  const safeCategory = String(service.serviceTypename || service.serviceType?.name || "Service");
+  const safeTitle = String(service.serviceTitle || service.name || service.serviceType?.name || "Professional Service");
+  const safeCategory = String(service.serviceType?.name || "Service");
 
-  // --- FIX 1: BULLETPROOF IDENTITY CHECK ---
+  // Prevent Providers from booking their own service
   const isOwnService = (() => {
     if (!user || !provider) return false;
-    
     const uId = String(user.id);
-    const pId = String(provider.id);
-    
     return (
-      uId === String(provider.userId) || 
-      uId === String(provider.user?.id) || 
-      String(user.providerId) === pId ||
-      (user.email && (user.email === provider.email || user.email === provider.user?.email)) ||
-      // Fallback: If they are a provider and the names match
-      (user.roles?.includes("PROVIDER") && providerName.toLowerCase().includes((user.firstName || "").toLowerCase()))
+      uId === String(providerUser.id) || 
+      String(user.providerId) === String(provider.id) ||
+      (user.email && user.email === providerUser.email)
     );
   })();
 
@@ -147,7 +147,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               
               <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-lg mb-8 font-medium">
                 <MapPin size={20} className="text-indigo-500 shrink-0" />
-                <span className="truncate">{String(service.location || provider.city || provider.address || "Location unavailable")}</span>
+                <span className="truncate">{String(provider.address || provider.city || "Location unavailable")}</span>
               </div>
 
               <div className="prose prose-lg dark:prose-invert max-w-none">
@@ -163,8 +163,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-gray-800 shadow-lg">
-                  {provider.imageUrl ? (
-                    <img src={provider.imageUrl} alt={providerName} className="w-full h-full rounded-full object-cover" />
+                  {providerUser.imageUrl ? (
+                    <img src={providerUser.imageUrl} alt={providerName} className="w-full h-full rounded-full object-cover" />
                   ) : (
                     <span className="text-3xl font-black">{providerInitial}</span>
                   )}
@@ -173,7 +173,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{providerName}</h4>
-                    {provider.verified && (
+                    {provider.isVerified && (
                       <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded-full" title="Verified Provider">
                         <ShieldCheck size={18} />
                       </div>
@@ -202,7 +202,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             </div>
 
-            {/* --- FIX 2: PORTFOLIO IMAGE RENDERING --- */}
+            {/* PORTFOLIO SECTION */}
             {portfolio.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-6">
@@ -212,12 +212,10 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {portfolio.map((item, idx) => {
-                    // This safely grabs the URL whether the API returned a raw string OR an object!
                     const imgSrc = typeof item === 'string' 
                       ? item 
                       : (item?.afterImages || item?.beforeImages || item?.imageUrl || item?.image);
 
-                    // Skip rendering if there is no valid URL found
                     if (!imgSrc) return null;
 
                     return (
@@ -225,7 +223,6 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                         <img 
                           src={imgSrc} 
                           alt="Portfolio Work" 
-                          // If the image link is dead/expired on the server, this hides the broken icon
                           onError={(e) => { e.target.style.display = 'none'; }}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                         />
@@ -239,6 +236,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
               </div>
             )}
 
+            {/* REVIEWS SECTION */}
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Customer Reviews</h3>
@@ -258,7 +256,13 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                 <div className="space-y-6">
                   {reviews.map((review, idx) => {
                     const revRating = Number(review.rating || 0);
-                    const revInitial = String(review.customerName || "U").charAt(0).toUpperCase();
+                    
+                    // FIX: Maps customer name correctly from Review -> Booking -> Customer -> firstName
+                    const customerName = review.booking?.customer?.firstName 
+                      ? `${review.booking.customer.firstName} ${review.booking.customer.lastName || ''}`.trim()
+                      : "Verified Customer";
+                      
+                    const revInitial = customerName.charAt(0).toUpperCase();
                     
                     return (
                     <div key={review.id || idx} className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
@@ -268,8 +272,8 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                             {revInitial}
                           </div>
                           <div>
-                            <h5 className="font-bold text-gray-900 dark:text-white">{String(review.customerName || "Verified Customer")}</h5>
-                            <p className="text-xs text-gray-500">{review.bookingDate ? new Date(review.bookingDate).toLocaleDateString() : ""}</p>
+                            <h5 className="font-bold text-gray-900 dark:text-white">{customerName}</h5>
+                            <p className="text-xs text-gray-500">{review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg border border-yellow-100 dark:border-yellow-800/50">

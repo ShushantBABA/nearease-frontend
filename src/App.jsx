@@ -393,7 +393,7 @@ export default function App() {
       </div>
 
       {/* --- ENTERPRISE FOOTER (Smart Render) --- */}
-      {["home", "service-details", "apply-provider", "about-us", "careers", "trust-safety", "terms", "privacy"].includes(activePage) && (
+      {["home", "apply-provider", "about-us", "careers", "trust-safety", "terms", "privacy"].includes(activePage) && (
         <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 pt-16 pb-8 mt-auto z-10 relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
