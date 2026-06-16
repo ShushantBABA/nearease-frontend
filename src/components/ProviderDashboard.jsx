@@ -166,16 +166,23 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
       <GoBackButton />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Provider Workspace</h1>
-        <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1 rounded-full border border-yellow-200 dark:border-yellow-800/50 shadow-sm">
-          <Star size={16} className="fill-yellow-400 text-yellow-400" />
-          <span className="font-bold text-sm">
-            {dashboardData?.averageRating ? Number(dashboardData.averageRating).toFixed(1) : "New"}
-          </span>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          Provider Workspace
+        </h1>
+
+        <div className="flex items-center gap-4">
+          {/* --- BEAUTIFULLY INTEGRATED RATING BADGE --- */}
+          <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 px-4 py-2 rounded-full border border-yellow-200 dark:border-yellow-700 shadow-sm">
+            <Star size={16} className="fill-yellow-400 text-yellow-400 mb-0.5" />
+            <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
+              {dashboardData?.averageRating ? Number(dashboardData.averageRating).toFixed(1) : "New"}
+            </span>
+          </div>
+
+          <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer">
+            <Plus size={20} /> New Service
+          </button>
         </div>
-        <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
-          <Plus size={20} /> New Service
-        </button>
       </div>
 
       {/* --- STAT GRID --- */}

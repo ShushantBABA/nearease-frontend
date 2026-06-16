@@ -1,20 +1,22 @@
 import React from "react";
 import { Star, MapPin, Eye, ArrowRight } from "lucide-react";
 
-export default function ServiceCard({ item, onCardClick, onPreviewClick, service}) {
+export default function ServiceCard({ item, onCardClick, onPreviewClick, service }) {
   if (!item) return null;
 
-  // --- BULLETPROOF DATA SANITIZATION ---
+  // --- BULLETPROOF DATA EXTRACTION ---
   const provider = item.provider || item.providerProfile || {};
   
-  // const rawRating = provider.averageRating || item.averageRating || 0;
-  const avgRating = Number(service?.averageRating || 0);
+  // Look for the rating inside item first, then provider, then fallback to service prop
+  const rawRating = item.averageRating || provider.averageRating || service?.averageRating || 0;
+  const avgRating = Number(rawRating);
   const hasRating = !isNaN(avgRating) && avgRating > 0;
-  
-  const safeTitle = String(item.serviceTitle || item.name || item.serviceType?.name || "Professional Service");
-  const safeCategory = String(item.serviceTypename || item.serviceType?.name || "Service");
-  const safeInitial = safeTitle.charAt(0).toUpperCase() || "S";
-  const safeLocation = String(item.location || provider.city || provider.address || "Location unavailable");
+
+  const title = String(item.serviceTitle || item.name || item.serviceType?.name || "Professional Service");
+  const category = String(item.serviceTypename || item.serviceType?.name || "Service");
+  const location = String(item.location || provider.city || provider.address || "Location unavailable");
+  const price = item.price || 0;
+  const imageUrl = item.imageUrl || service?.imageUrl;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full hover:-translate-y-1">
