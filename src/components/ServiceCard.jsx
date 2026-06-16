@@ -1,7 +1,7 @@
 import React from "react";
 import { Star, MapPin, Eye, ArrowRight } from "lucide-react";
 
-export default function ServiceCard({ item, onCardClick, onPreviewClick }) {
+export default function ServiceCard({ item, onCardClick, onPreviewClick, service}) {
   if (!item) return null;
 
   // --- BULLETPROOF DATA SANITIZATION ---
