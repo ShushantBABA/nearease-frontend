@@ -7,8 +7,8 @@ export default function ServiceCard({ item, onCardClick, onPreviewClick }) {
   // --- BULLETPROOF DATA SANITIZATION ---
   const provider = item.provider || item.providerProfile || {};
   
-  const rawRating = provider.averageRating || item.averageRating || 0;
-  const avgRating = Number(rawRating);
+  // const rawRating = provider.averageRating || item.averageRating || 0;
+  const avgRating = Number(service?.averageRating || 0);
   const hasRating = !isNaN(avgRating) && avgRating > 0;
   
   const safeTitle = String(item.serviceTitle || item.name || item.serviceType?.name || "Professional Service");

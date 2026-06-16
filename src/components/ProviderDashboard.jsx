@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Briefcase, DollarSign, Clock, CheckCircle, MapPin, 
   Calendar, User, Loader2, Plus, TrendingUp, XCircle, 
-  FileText, Trash2, Image as ImageIcon, Settings2, Edit3, Save, Tag
+  FileText, Trash2, Image as ImageIcon, Settings2, Edit3, Save, Tag, Star, Phone, Mail
 } from "lucide-react";
 import { ProviderAPI } from "../services/providerApi";
 import { BookingAPI } from "../services/bookingApi";
