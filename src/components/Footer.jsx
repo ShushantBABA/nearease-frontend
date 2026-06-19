@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 
+import Image1 from "../assets/ashish_image.jpeg";
+import Image2 from "../assets/shushant_image.jpeg";
+
 export default function Footer({ setActivePage }) {
   // State to track which email was copied to trigger the visual feedback
   const [copiedStates, setCopiedStates] = useState({ ashish: false, shushant: false });
@@ -90,10 +93,10 @@ export default function Footer({ setActivePage }) {
                     <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                     
                     <div className="flex items-center gap-3 mb-3">
-                      <img src="https://ui-avatars.com/api/?name=Ashish+Kumar&background=e0e7ff&color=4f46e5&size=100" alt="Ashish Kumar" className="w-12 h-12 rounded-full border border-indigo-100 dark:border-indigo-900 object-cover shadow-sm" />
+                      <img src={Image1} alt="Ashish Kumar" className="w-12 h-12 rounded-full border border-indigo-100 dark:border-indigo-900 object-cover shadow-sm" />
                       <div>
                         <h5 className="font-bold text-gray-900 dark:text-white leading-tight">Ashish Kumar</h5>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Founder & Developer</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Founder & Backend Developer</span>
                       </div>
                     </div>
                     
@@ -151,26 +154,26 @@ export default function Footer({ setActivePage }) {
                     <div className="absolute -bottom-2 left-8 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 transform rotate-45"></div>
                     
                     <div className="flex items-center gap-3 mb-3">
-                      <img src="https://ui-avatars.com/api/?name=Shushant&background=e0e7ff&color=4f46e5&size=100" alt="Shushant" className="w-12 h-12 rounded-full border border-indigo-100 dark:border-indigo-900 object-cover shadow-sm" />
+                      <img src={Image2} alt="Shushant" className="w-12 h-12 rounded-full border border-indigo-100 dark:border-indigo-900 object-cover shadow-sm" />
                       <div>
                         <h5 className="font-bold text-gray-900 dark:text-white leading-tight">Shushant</h5>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Co-Founder</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Co-Founder & Frontend Developer</span>
                       </div>
                     </div>
                     
                     <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-4 font-medium">
-                      Currently an MCA student at NIT Raipur and a Manager at Deloitte GAI. Passionate about bringing robust full-stack architecture and IoT integration to NearEase.
+                      Aspirant Frontend Developer doing MCA from NIT Raipur. Currently learning Django and building projects with the help of IoT and architecture focused learnings.
                     </p>
                     
                     {/* Socials - NOW WITH BOUNCE ANIMATION */}
                     <div className="flex gap-3 relative z-50">
-                      <a href="https://github.com/your-github" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:-translate-y-1.5 hover:scale-110 hover:shadow-md">
+                      <a href="https://github.com/ShushantBuilds" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:-translate-y-1.5 hover:scale-110 hover:shadow-md">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
                       </a>
-                      <a href="https://linkedin.com/in/your-linkedin" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all duration-300 transform hover:-translate-y-1.5 hover:scale-110 hover:shadow-md">
+                      <a href="https://linkedin.com/in/shushantgupta" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all duration-300 transform hover:-translate-y-1.5 hover:scale-110 hover:shadow-md">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
                       </a>
-                      <a href="https://instagram.com/your-instagram" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30 transition-all duration-300 transform hover:-translate-y-1.5 hover:scale-110 hover:shadow-md">
+                      <a href="https://instagram.com/shushant_gupta12" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-50 dark:bg-gray-900 rounded-xl text-gray-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-900/30 transition-all duration-300 transform hover:-translate-y-1.5 hover:scale-110 hover:shadow-md">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                       </a>
                     </div>
