@@ -67,5 +67,20 @@ export const AdminAPI = {
       method: "POST",
       headers: getHeaders()
     });
+  },
+
+  // --- ADDED: Escrow Financial Actions ---
+  processPayout: async (bookingId) => {
+    return fetchWithAuth(`${BASE_URL}/payout/${bookingId}`, { 
+      method: "POST", 
+      headers: getHeaders() 
+    });
+  },
+
+  processRefund: async (bookingId) => {
+    return fetchWithAuth(`${BASE_URL}/refund/${bookingId}`, { 
+      method: "POST", 
+      headers: getHeaders() 
+    });
   }
 };

@@ -22,6 +22,7 @@ import Careers from "./components/Careers";
 import TrustSafety from "./components/TrustSafety";
 import TermsOfService from "./components/TermsOfService";
 import PrivacyPolicy from "./components/PrivacyPolicy";
+import Footer from './components/Footer';
 
 // API Services
 import { PublicAPI } from "./services/publicApi";
@@ -394,138 +395,7 @@ export default function App() {
 
       {/* --- ENTERPRISE FOOTER (Smart Render) --- */}
       {["home", "apply-provider", "about-us", "careers", "trust-safety", "terms", "privacy"].includes(activePage) && (
-        <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 pt-16 pb-8 mt-auto z-10 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-              
-              {/* Column 1: Brand & Socials */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <svg width="32" height="32" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="400" height="400" rx="100" fill="url(#foot-grad)"/>
-                    <path d="M120 280V120L250 240V120" stroke="white" strokeWidth="48" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="280" cy="280" r="28" fill="#22D3EE"/>
-                    <defs>
-                      <linearGradient id="foot-grad" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#4F46E5"/><stop offset="1" stopColor="#9333EA"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">NearEase</span>
-                </div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed pr-4">
-                  Your premier platform for connecting with top-rated local professionals. Quality services, securely delivered.
-                </p>
-                <div className="flex gap-4 pt-2">
-                  <a 
-                      href="https://github.com/Singhashish-commits" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                    >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-                      <path d="M9 18c-4.51 2-5-2-7-2"/>
-                    </svg>
-                  </a>
-                  <a 
-                      href="https://www.linkedin.com/in/ashish-kumar-449215349/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                      <rect width="4" height="12" x="2" y="9"/>
-                      <circle cx="4" cy="4" r="2"/>
-                    </svg>
-                  </a>
-                  <a 
-                      href="https://x.com/Ashish_SinghCs" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-black transition-colors"
-                    >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                  </a>
-
-                </div>
-              </div>
-
-              {/* Column 2: Quick Links */}
-              <div>
-                <h4 className="font-bold text-gray-900 dark:text-white mb-6">Company & Legal</h4>
-                <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400 font-medium">
-                  <li><button onClick={() => { window.scrollTo(0,0); setActivePage("about-us"); }} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">About Us</button></li>
-                  <li><button onClick={() => { window.scrollTo(0,0); setActivePage("careers"); }} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">Careers at NearEase</button></li>
-                  <li><button onClick={() => { window.scrollTo(0,0); setActivePage("trust-safety"); }} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">Trust & Safety</button></li>
-                  <li><button onClick={() => { window.scrollTo(0,0); setActivePage("terms"); }} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">Terms of Service</button></li>
-                  <li><button onClick={() => { window.scrollTo(0,0); setActivePage("privacy"); }} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">Privacy Policy</button></li>
-                </ul>
-              </div>
-
-              {/* Column 3: Newsletter */}
-              {/* <div>
-                <h4 className="font-bold text-gray-900 dark:text-white mb-6">Stay Updated</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Get the latest news and provider discounts delivered to your inbox.</p>
-                <div className="relative group">
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-indigo-500 rounded-xl px-4 py-3 outline-none transition-all text-sm"
-                  />
-                  <button className="absolute right-2 top-2 bottom-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm cursor-pointer">
-                    <Send size={16} />
-                  </button>
-                </div>
-              </div> */}
-
-              {/* Column 4: Dedicated Contact Us */}
-              <div>
-                <h4 className="font-bold text-gray-900 dark:text-white mb-6">Contact Us</h4>
-                <div className="space-y-3">
-                  {/* Person 1 */}
-                  <a href="mailto:singhashish.cs@gmail.com" className="group flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/50 dark:hover:bg-indigo-900/20 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50 cursor-pointer block">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 shadow-inner">
-                      <span className="font-black text-lg">A</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">Ashish Kumar</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Founder</p>
-                      <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">singhashish.cs@gmail.com</p>
-                    </div>
-                  </a>
-
-                  {/* Person 2 */}
-                  <a href="mailto:shushant19102000@gmail.com" className="group flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/50 dark:hover:bg-indigo-900/20 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50 cursor-pointer block">
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 shadow-inner">
-                      <span className="font-black text-lg">S</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">Shushant</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Co-Founder</p>
-                      <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">shushant19102000@gmail.com</p>
-                    </div>
-                  </a>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Bottom Bar */}
-            <div className="border-t border-gray-200 dark:border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-sm font-medium text-gray-400 dark:text-gray-500">
-                © {new Date().getFullYear()} NearEase Technologies. All rights reserved.
-              </p>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-100 dark:border-green-900/30">
-                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                 <span className="text-xs font-bold text-green-700 dark:text-green-400">All Systems Operational</span>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <Footer setActivePage={setActivePage} />
       )}
 
       {/* Modals */}

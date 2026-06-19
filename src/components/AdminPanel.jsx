@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import { AdminAPI } from "../services/adminApi";
 import { BookingAPI } from "../services/bookingApi";
-import { PaymentAPI } from "../services/paymentApi";
 
 import GoBackButton from "./GoBackButton";
 
@@ -34,7 +33,6 @@ export default function AdminPanel() {
     try {
       const [providersData, bookingsData] = await Promise.all([
         AdminAPI.getPendingProviders().catch(() => []),
-        // THE FIX: Now using the dedicated Admin endpoint to get ALL platform bookings
         BookingAPI.getAllPlatformBookings().catch(() => []) 
       ]);
       setPendingApplications(Array.isArray(providersData) ? providersData : []);
@@ -75,7 +73,8 @@ export default function AdminPanel() {
     
     setProcessingId(bookingId);
     try {
-      await PaymentAPI.processPayout(bookingId);
+      // USING ADMIN API NOW
+      await AdminAPI.processPayout(bookingId);
       alert("Success: Funds have been transferred to the provider!");
       setBookings(bookings.map(b => b.id === bookingId ? { ...b, paymentStatus: "TRANSFER_TO_PROVIDER" } : b));
     } catch (error) {
@@ -90,7 +89,8 @@ export default function AdminPanel() {
     
     setProcessingId(bookingId);
     try {
-      await PaymentAPI.processRefund(bookingId);
+      // USING ADMIN API NOW
+      await AdminAPI.processRefund(bookingId);
       alert("Success: Funds have been refunded to the customer!");
       setBookings(bookings.map(b => b.id === bookingId ? { ...b, paymentStatus: "REFUNDED", bookingStatus: "CANCELLED" } : b));
     } catch (error) {
@@ -110,7 +110,7 @@ export default function AdminPanel() {
   });
 
   const totalEscrow = bookings
-    .filter(b => b.bookingStatus === "COMPLETED" && b.paymentStatus !== "TRANSFER_TO_PROVIDER")
+    .filter(b => b.paymentStatus === "PAID_TO_PLATFORM")
     .reduce((sum, b) => sum + (b.price || b.serviceOffering?.price || 0), 0);
 
   const totalPaidOut = bookings
@@ -236,7 +236,7 @@ export default function AdminPanel() {
               <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><DollarSign size={120} /></div>
               <p className="text-indigo-100 font-semibold mb-1 relative z-10">Funds in Escrow</p>
               <h3 className="text-4xl font-black relative z-10">₹{totalEscrow}</h3>
-              <p className="text-sm text-indigo-200 mt-2 relative z-10">Pending Provider Payouts</p>
+              <p className="text-sm text-indigo-200 mt-2 relative z-10">Secured Platform Payments</p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
@@ -255,7 +255,7 @@ export default function AdminPanel() {
                 <div>
                   <p className="text-gray-500 dark:text-gray-400 font-semibold mb-1">Pending Actions</p>
                   <h3 className="text-3xl font-black text-gray-900 dark:text-white">
-                    {bookings.filter(b => b.bookingStatus === "COMPLETED" && b.paymentStatus !== "TRANSFER_TO_PROVIDER").length}
+                    {bookings.filter(b => b.bookingStatus === "COMPLETED" && b.paymentStatus === "PAID_TO_PLATFORM").length}
                   </h3>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center text-yellow-600 dark:text-yellow-400"><AlertCircle size={24} /></div>
@@ -305,25 +305,30 @@ export default function AdminPanel() {
                         <td className="p-4"><p className="text-sm text-gray-700 dark:text-gray-300">{booking.customer?.firstName} {booking.customer?.lastName}</p></td>
                         <td className="p-4"><p className="font-bold text-indigo-600 dark:text-indigo-400">₹{booking.price || booking.serviceOffering?.price || 0}</p></td>
                         <td className="p-4">
-                          {booking.paymentStatus === "TRANSFER_TO_PROVIDER" ? (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">Paid Out</span>
+                          {booking.paymentStatus === "PAID_TO_PLATFORM" ? (
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">Secured in Escrow</span>
+                          ) : booking.paymentStatus === "TRANSFER_TO_PROVIDER" ? (
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">Paid to Provider</span>
                           ) : booking.paymentStatus === "REFUNDED" ? (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-800 border border-gray-200">Refunded</span>
-                          ) : booking.bookingStatus === "COMPLETED" ? (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">Pending Payout</span>
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gray-200 text-gray-800 border border-gray-300">Refunded</span>
                           ) : (
-                            <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">In Progress</span>
+                            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">Unpaid</span>
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {booking.bookingStatus === "COMPLETED" && booking.paymentStatus !== "TRANSFER_TO_PROVIDER" && booking.paymentStatus !== "REFUNDED" ? (
+                          {/* FLEXIBLE ESCROW LOGIC CHECK FOR ADMIN ACTIONS */}
+                          {booking.bookingStatus === "COMPLETED" && booking.paymentStatus === "PAID_TO_PLATFORM" ? (
                             <div className="flex justify-end gap-2">
                               <button onClick={() => handleRefund(booking.id)} disabled={processingId === booking.id} className="px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition">Refund</button>
                               <button onClick={() => handlePayout(booking.id)} disabled={processingId === booking.id} className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm">
                                 {processingId === booking.id ? <Loader2 size={14} className="animate-spin" /> : <DollarSign size={14} />} Release Payout
                               </button>
                             </div>
-                          ) : <span className="text-xs text-gray-400 font-medium italic">No actions available</span>}
+                          ) : booking.bookingStatus === "COMPLETED" && booking.paymentStatus !== "TRANSFER_TO_PROVIDER" && booking.paymentStatus !== "REFUNDED" ? (
+                             <span className="text-xs text-amber-600 font-bold bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">Awaiting Customer Payment</span>
+                          ) : (
+                             <span className="text-xs text-gray-400 font-medium italic">No actions available</span>
+                          )}
                         </td>
                       </tr>
                     ))

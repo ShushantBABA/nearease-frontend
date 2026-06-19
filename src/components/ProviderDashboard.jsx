@@ -76,7 +76,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
     } catch (error) { window.alert(error.message || "Failed to send OTP to the customer."); }
   };
 
-  // --- THE FIX: BULLETPROOF OTP SUBMISSION ---
   const handleOtpSubmit = async () => {
     if (!otpCode || otpCode.length < 4) return window.alert("Please enter a valid OTP.");
     setIsSubmittingOtp(true);
@@ -91,20 +90,16 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
       
       window.alert("Service successfully completed!");
       
-      // Safely update local state without objectURL crashes
       setRequests(requests.map(req => req.id === completingJobId ? { ...req, bookingStatus: "COMPLETED" } : req));
       
-      // Clear forms and close modal
       setCompletingJobId(null); 
       setOtpCode(""); 
       setBeforeImage(null); 
       setAfterImage(null);
       
-      // Pull fresh data from the server
       refreshDashboardData(); 
       
     } catch (error) { 
-      // This will log the actual error to your F12 console so you know exactly what failed!
       console.error("OTP Verification Error:", error);
       window.alert(error.message || "Invalid OTP. Please check with the customer."); 
     } finally { 
@@ -171,7 +166,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </h1>
 
         <div className="flex items-center gap-4">
-          {/* --- BEAUTIFULLY INTEGRATED RATING BADGE --- */}
           <div className="flex items-center gap-1.5 bg-white dark:bg-gray-800 px-4 py-2 rounded-full border border-yellow-200 dark:border-yellow-700 shadow-sm">
             <Star size={16} className="fill-yellow-400 text-yellow-400 mb-0.5" />
             <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
@@ -469,11 +463,16 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     </div>
                   )}
 
+                  {/* --- FLEXIBLE FLOW: ALLOW COMPLETION WITHOUT PAYMENT CHECK --- */}
                   {(job.bookingStatus === "CONFIRMED" || job.bookingStatus === "ACCEPTED") && (
                     <div className="pt-2 mt-4">
                       <button onClick={() => handleInitiateCompletion(job.id)} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-bold hover:bg-green-600 transition flex justify-center items-center gap-2 shadow-sm cursor-pointer">
                         <CheckCircle size={20} /> Mark as Complete
                       </button>
+                      {/* Note for the provider if payment hasn't been collected yet */}
+                      {job.paymentStatus !== "PAID_TO_PLATFORM" && (
+                         <p className="text-center text-xs text-amber-600 mt-3 font-medium">Customer has chosen to pay after completion.</p>
+                      )}
                     </div>
                   )}
                 </div>
