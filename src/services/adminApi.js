@@ -69,6 +69,12 @@ export const AdminAPI = {
     });
   },
 
+  getAllBookings: async () => {
+    return fetchWithAuth(`${BASE_URL}/all/bookings`, {
+      headers: getHeaders()
+    });
+  },
+
   // --- ADDED: Escrow Financial Actions ---
   processPayout: async (bookingId) => {
     return fetchWithAuth(`${BASE_URL}/payout/${bookingId}`, { 

@@ -27,13 +27,15 @@ export default function AdminPanel() {
     fetchAdminData();
   }, []);
 
-  // Fetch BOTH providers and financial data simultaneously
   const fetchAdminData = async () => {
     setIsLoading(true);
     try {
       const [providersData, bookingsData] = await Promise.all([
         AdminAPI.getPendingProviders().catch(() => []),
-        BookingAPI.getAllPlatformBookings().catch(() => []) 
+        AdminAPI.getAllBookings().catch((err) => {
+          console.error("Failed to fetch admin bookings:", err);
+          return [];
+        }) 
       ]);
       setPendingApplications(Array.isArray(providersData) ? providersData : []);
       setBookings(Array.isArray(bookingsData) ? bookingsData : []);
@@ -44,9 +46,6 @@ export default function AdminPanel() {
     }
   };
 
-  // ==========================================
-  // --- VERIFICATION HANDLERS ---
-  // ==========================================
   const handleDecision = async (id, decision) => {
     if (!window.confirm(`Are you sure you want to ${decision} this application?`)) return;
     
@@ -65,15 +64,11 @@ export default function AdminPanel() {
     }
   };
 
-  // ==========================================
-  // --- FINANCIAL HANDLERS ---
-  // ==========================================
   const handlePayout = async (bookingId) => {
     if (!window.confirm(`Are you sure you want to release funds to the provider for Booking #${bookingId}?`)) return;
     
     setProcessingId(bookingId);
     try {
-      // USING ADMIN API NOW
       await AdminAPI.processPayout(bookingId);
       alert("Success: Funds have been transferred to the provider!");
       setBookings(bookings.map(b => b.id === bookingId ? { ...b, paymentStatus: "TRANSFER_TO_PROVIDER" } : b));
@@ -89,7 +84,6 @@ export default function AdminPanel() {
     
     setProcessingId(bookingId);
     try {
-      // USING ADMIN API NOW
       await AdminAPI.processRefund(bookingId);
       alert("Success: Funds have been refunded to the customer!");
       setBookings(bookings.map(b => b.id === bookingId ? { ...b, paymentStatus: "REFUNDED", bookingStatus: "CANCELLED" } : b));
@@ -100,7 +94,6 @@ export default function AdminPanel() {
     }
   };
 
-  // Derived Financial Metrics
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
       booking.id?.toString().includes(searchQuery) || 
