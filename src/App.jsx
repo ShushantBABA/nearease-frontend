@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowDownCircle, Loader2, MapPin, Search, Send, Star, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowDownCircle, Loader2, MapPin, Search, Send, Star, ShieldCheck, Sparkles, CheckCircle } from "lucide-react";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -32,6 +32,9 @@ import { UserAPI } from "./services/userApi";
 import { heroImages } from "./data/mockData"; 
 
 export default function App() {
+  // ==========================================
+  // --- LOGIC SECTION (STRICTLY UNTOUCHED) ---
+  // ==========================================
   const [mainCategories, setMainCategories] = useState([]); 
   const [subCategories, setSubCategories] = useState([]);   
   const [listings, setListings] = useState([]);             
@@ -161,7 +164,7 @@ export default function App() {
   const scrollToContent = () => {
     if (mainContentRef.current) {
       window.scrollTo({
-        top: mainContentRef.current.getBoundingClientRect().top + window.pageYOffset - 100, // Adjusted offset for floating search bar
+        top: mainContentRef.current.getBoundingClientRect().top + window.pageYOffset - 100, 
         behavior: "smooth"
       });
     }
@@ -207,7 +210,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative transition-colors duration-300 selection:bg-indigo-500 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative transition-colors duration-300 selection:bg-indigo-500 selection:text-white overflow-x-clip">
       
       {/* Global Alert Systems */}
       <ToastContainer />
@@ -224,10 +227,8 @@ export default function App() {
       <div className="flex-grow">
         {activePage === "home" ? (
           <>
-            {/* ========================================== */}
-            {/* -------------- HERO SECTION -------------- */}
-            {/* ========================================== */}
-            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pt-16 pb-32 md:pt-24 md:pb-40 px-4 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
+            {/* THE FIX 2: Replaced static px-4 with px-4 sm:px-6 lg:px-8 to perfectly flush align with Main Content below */}
+            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pt-16 pb-32 md:pt-24 md:pb-40 px-4 sm:px-6 lg:px-8 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
               
               {/* Background Mesh Gradients */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -256,9 +257,9 @@ export default function App() {
                       Explore Services 
                       <ArrowDownCircle size={22} className="group-hover:translate-y-1 transition-transform" />
                     </button>
-                    <button onClick={() => setAuthModalView("register")} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 font-bold py-4 px-8 rounded-full shadow-sm transition-all transform hover:-translate-y-1 cursor-pointer text-lg flex items-center justify-center text-center">
+                    {/* <button onClick={() => setAuthModalView("register")} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 font-bold py-4 px-8 rounded-full shadow-sm transition-all transform hover:-translate-y-1 cursor-pointer text-lg flex items-center justify-center text-center">
                       Join as a Professional
-                    </button>
+                    </button> */}
                   </div>
                 </div>
 
@@ -281,25 +282,22 @@ export default function App() {
                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
                        <ShieldCheck size={24} /> 
                      </div>
-                     <div>
+                     {/* <div>
                        <p className="text-sm font-bold text-gray-900 dark:text-white">100% Verified</p>
                        <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
                          <Star size={12} className="fill-yellow-400 text-yellow-400" /> 4.9/5 Average Rating
                        </div>
-                     </div>
+                     </div> */}
                   </div>
                 </div>
 
               </div>
             </div>
 
-            {/* ========================================== */}
-            {/* ---------- MAIN CONTENT SECTION ---------- */}
-            {/* ========================================== */}
             <main ref={mainContentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 relative">
               
-              {/* Floating Glassmorphic Search Bar */}
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-2 md:p-3 rounded-3xl md:rounded-full flex flex-col md:flex-row items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-100 dark:border-gray-700 max-w-4xl mx-auto -mt-16 relative z-30 mb-16 transform transition-all hover:shadow-[0_8px_40px_rgb(0,0,0,0.12)]">
+              {/* THE FIX 3: Added w-full to the floating search bar so it respects container width dynamically */}
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-2 md:p-3 rounded-3xl md:rounded-full flex flex-col md:flex-row items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-100 dark:border-gray-700 w-full max-w-4xl mx-auto -mt-16 relative z-30 mb-16 transform transition-all hover:shadow-[0_8px_40px_rgb(0,0,0,0.12)]">
                   <div className="flex items-center px-6 py-4 flex-1 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 w-full group">
                     <MapPin size={22} className="text-indigo-500 mr-3 shrink-0 group-hover:scale-110 transition-transform" />
                     <div className="flex flex-col w-full">
