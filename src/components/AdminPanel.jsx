@@ -294,7 +294,7 @@ export default function AdminPanel() {
                           <p className="font-bold text-gray-900 dark:text-white">#{booking.id}</p>
                           <p className="text-xs text-gray-500 truncate max-w-[150px]">{booking.ServiceName || "Service"}</p>
                         </td>
-                        <td className="p-4"><p className="font-medium text-gray-900 dark:text-gray-200">{booking.provider?.name || "N/A"}</p></td>
+                        <td className="p-4"><p className="font-medium text-gray-900 dark:text-gray-200">{booking.provider?.user?.firstName ? `${booking.provider.user.firstName} ${booking.provider.user.lastName}`: "N/A"}</p></td>
                         <td className="p-4"><p className="text-sm text-gray-700 dark:text-gray-300">{booking.customer?.firstName} {booking.customer?.lastName}</p></td>
                         <td className="p-4"><p className="font-bold text-indigo-600 dark:text-indigo-400">₹{booking.price || booking.serviceOffering?.price || 0}</p></td>
                         <td className="p-4">
