@@ -228,7 +228,7 @@ export default function App() {
         {activePage === "home" ? (
           <>
             {/* THE FIX 2: Replaced static px-4 with px-4 sm:px-6 lg:px-8 to perfectly flush align with Main Content below */}
-            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pb-32 md:pt-24 md:pb-40 px-4 sm:px-6 lg:px-8 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
+            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pb-32 md:pt-15 md:pb-40 px-4 sm:px-6 lg:px-8 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
               
               {/* Background Mesh Gradients */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none z-0">
