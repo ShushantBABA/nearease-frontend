@@ -87,7 +87,7 @@ export default function Navbar({
 
   return (
     // The wrapper creates the padding at the top so the navbar floats
-    <div className="pt-4 px-4 sm:px-6 lg:px-8 sticky top-0 z-50 mb-8">
+    <div className="pt-2 sm:px-6 lg:px-8 sticky top-0 z-50">
       {/* The Floating Glassmorphic Island */}
       <nav className="max-w-7xl mx-auto bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl border border-white/50 dark:border-gray-700/50 shadow-xl shadow-indigo-500/5 dark:shadow-black/20 rounded-2xl h-[72px] flex justify-between items-center px-4 sm:px-6 transition-colors duration-300">
         

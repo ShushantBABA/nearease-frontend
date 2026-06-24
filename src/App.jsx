@@ -228,7 +228,7 @@ export default function App() {
         {activePage === "home" ? (
           <>
             {/* THE FIX 2: Replaced static px-4 with px-4 sm:px-6 lg:px-8 to perfectly flush align with Main Content below */}
-            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pt-16 pb-32 md:pt-24 md:pb-40 px-4 sm:px-6 lg:px-8 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
+            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pb-32 md:pt-24 md:pb-40 px-4 sm:px-6 lg:px-8 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
               
               {/* Background Mesh Gradients */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -241,7 +241,7 @@ export default function App() {
                 {/* Hero Text Content */}
                 <div className="flex flex-col text-left space-y-8 lg:col-span-6 animate-in slide-in-from-bottom-8 fade-in duration-700">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 w-fit text-indigo-600 dark:text-indigo-400 font-bold text-sm shadow-sm">
-                    <Sparkles size={16} /> The #1 Local Service Platform
+                    <Sparkles size={16} /> Your Most Trusted Platform
                   </div>
                   
                   <h2 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 dark:text-white leading-[1.1] tracking-tight">
