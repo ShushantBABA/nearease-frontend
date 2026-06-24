@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowDownCircle, Loader2, MapPin, Search, Send } from "lucide-react";
+import { ArrowDownCircle, Loader2, MapPin, Search, Send, Star, ShieldCheck, Sparkles } from "lucide-react";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -50,19 +50,16 @@ export default function App() {
   const [bookingService, setBookingService] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // THE THEME ENGINE STATE
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "system");
 
   const mainContentRef = useRef(null);
 
-  // Listen for GoBackButton custom event
   useEffect(() => {
     const handleNavigateHome = () => setActivePage("home");
     window.addEventListener("navigate-home", handleNavigateHome);
     return () => window.removeEventListener("navigate-home", handleNavigateHome);
   }, []);
 
-  // --- DOM ROOT THEME ENGINE ---
   useEffect(() => {
     localStorage.setItem("theme", theme);
     const root = window.document.documentElement;
@@ -81,7 +78,6 @@ export default function App() {
     }
   }, [theme]);
 
-  // Listener to automatically update if the user changes their computer settings
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e) => {
@@ -165,7 +161,7 @@ export default function App() {
   const scrollToContent = () => {
     if (mainContentRef.current) {
       window.scrollTo({
-        top: mainContentRef.current.getBoundingClientRect().top + window.pageYOffset - 80,
+        top: mainContentRef.current.getBoundingClientRect().top + window.pageYOffset - 100, // Adjusted offset for floating search bar
         behavior: "smooth"
       });
     }
@@ -211,7 +207,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative transition-colors duration-300">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative transition-colors duration-300 selection:bg-indigo-500 selection:text-white">
       
       {/* Global Alert Systems */}
       <ToastContainer />
@@ -228,56 +224,114 @@ export default function App() {
       <div className="flex-grow">
         {activePage === "home" ? (
           <>
-            <div className="bg-white dark:bg-gray-900 py-16 md:py-24 px-4 transition-colors duration-300 border-b border-gray-100 dark:border-gray-800 relative z-10">
-              <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div className="flex flex-col text-left space-y-6 z-10">
-                  <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
-                    Find the best local <span className="text-indigo-600 dark:text-indigo-400">services</span> in your city.
+            {/* ========================================== */}
+            {/* -------------- HERO SECTION -------------- */}
+            {/* ========================================== */}
+            <div className="relative bg-white dark:bg-gray-900 overflow-hidden pt-16 pb-32 md:pt-24 md:pb-40 px-4 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
+              
+              {/* Background Mesh Gradients */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none z-0">
+                 <div className="w-[600px] h-[600px] bg-indigo-400/10 dark:bg-indigo-600/20 blur-[120px] rounded-full absolute -top-40 -left-20 animate-pulse-slow"></div>
+                 <div className="w-[500px] h-[500px] bg-purple-400/10 dark:bg-purple-600/20 blur-[100px] rounded-full absolute top-20 right-0 animate-pulse-slow" style={{ animationDelay: '2s'}}></div>
+              </div>
+
+              <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 items-center relative z-10">
+                
+                {/* Hero Text Content */}
+                <div className="flex flex-col text-left space-y-8 lg:col-span-6 animate-in slide-in-from-bottom-8 fade-in duration-700">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 w-fit text-indigo-600 dark:text-indigo-400 font-bold text-sm shadow-sm">
+                    <Sparkles size={16} /> The #1 Local Service Platform
+                  </div>
+                  
+                  <h2 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 dark:text-white leading-[1.1] tracking-tight">
+                    Find the best local <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">services</span> in your city.
                   </h2>
-                  <p className="text-gray-500 dark:text-gray-400 text-lg md:text-xl max-w-lg leading-relaxed">
-                    Discover top-rated restaurants, doctors, mechanics, and more right in your neighborhood.
+                  
+                  <p className="text-gray-500 dark:text-gray-400 text-lg md:text-xl max-w-xl leading-relaxed font-medium">
+                    Skip the endless searching. Discover top-rated cleaners, mechanics, doctors, and more—all vetted and ready right in your neighborhood.
                   </p>
-                  <div className="pt-4">
-                    <button onClick={scrollToContent} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-8 rounded-full shadow-lg transition transform hover:-translate-y-1 cursor-pointer text-lg flex items-center gap-3 group w-fit">
-                      Explore Services Now
-                      <ArrowDownCircle size={22} className="text-indigo-200 group-hover:translate-y-1 transition-transform" />
+                  
+                  <div className="pt-2 flex flex-col sm:flex-row gap-4">
+                    <button onClick={scrollToContent} className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-extrabold py-4 px-8 rounded-full shadow-xl transition-all transform hover:-translate-y-1 hover:shadow-2xl cursor-pointer text-lg flex items-center justify-center gap-3 group">
+                      Explore Services 
+                      <ArrowDownCircle size={22} className="group-hover:translate-y-1 transition-transform" />
+                    </button>
+                    <button onClick={() => setAuthModalView("register")} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 font-bold py-4 px-8 rounded-full shadow-sm transition-all transform hover:-translate-y-1 cursor-pointer text-lg flex items-center justify-center text-center">
+                      Join as a Professional
                     </button>
                   </div>
                 </div>
-                <div className="relative h-[350px] md:h-[500px] w-full rounded-3xl overflow-hidden shadow-2xl bg-gray-100 dark:bg-gray-800">
+
+                {/* Hero Dynamic Image Slider */}
+                <div className="lg:col-span-6 relative h-[400px] md:h-[550px] w-full rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-gray-900/5 dark:ring-white/10 group animate-in slide-in-from-right-8 fade-in duration-1000">
                   {heroImages.map((img, index) => (
-                    <img key={index} src={img} alt={`Hero ${index}`} className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100 scale-100 z-10" : "opacity-0 scale-105 z-0"}`} />
+                    <img 
+                      key={index} 
+                      src={img} 
+                      alt={`Hero ${index}`} 
+                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100 scale-100 z-10" : "opacity-0 scale-105 z-0"}`} 
+                    />
                   ))}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900/10 to-transparent z-20 pointer-events-none"></div>
+                  
+                  {/* Subtle Image Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-20 pointer-events-none"></div>
+
+                  {/* Floating Trust Badge */}
+                  <div className="absolute bottom-8 left-8 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 flex items-center gap-4 z-30 animate-in slide-in-from-bottom-10 fade-in duration-1000 delay-300 transform group-hover:-translate-y-2 transition-transform">
+                     <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
+                       <ShieldCheck size={24} /> 
+                     </div>
+                     <div>
+                       <p className="text-sm font-bold text-gray-900 dark:text-white">100% Verified</p>
+                       <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                         <Star size={12} className="fill-yellow-400 text-yellow-400" /> 4.9/5 Average Rating
+                       </div>
+                     </div>
+                  </div>
                 </div>
+
               </div>
             </div>
 
-            <main ref={mainContentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-gray-100 dark:border-gray-800">
+            {/* ========================================== */}
+            {/* ---------- MAIN CONTENT SECTION ---------- */}
+            {/* ========================================== */}
+            <main ref={mainContentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 relative">
               
-              <div className="mb-10">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
-                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white shrink-0">Choose an Experience</h3>
+              {/* Floating Glassmorphic Search Bar */}
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-2 md:p-3 rounded-3xl md:rounded-full flex flex-col md:flex-row items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-100 dark:border-gray-700 max-w-4xl mx-auto -mt-16 relative z-30 mb-16 transform transition-all hover:shadow-[0_8px_40px_rgb(0,0,0,0.12)]">
+                  <div className="flex items-center px-6 py-4 flex-1 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 w-full group">
+                    <MapPin size={22} className="text-indigo-500 mr-3 shrink-0 group-hover:scale-110 transition-transform" />
+                    <div className="flex flex-col w-full">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Location</label>
+                      <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Where? (e.g. Raipur)" className="w-full bg-transparent outline-none text-gray-900 dark:text-white font-semibold placeholder-gray-300 dark:placeholder-gray-500" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center px-6 py-4 flex-1 w-full group">
+                    <Search size={22} className="text-purple-500 mr-3 shrink-0 group-hover:scale-110 transition-transform" />
+                    <div className="flex flex-col w-full">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Service</label>
+                      <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="What do you need?" className="w-full bg-transparent outline-none text-gray-900 dark:text-white font-semibold placeholder-gray-300 dark:placeholder-gray-500" />
+                    </div>
+                  </div>
 
-                   <div className="flex w-full lg:max-w-2xl bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 p-1.5 items-center shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-center px-4 py-2 flex-1 border-r border-gray-200 dark:border-gray-700">
-                        <MapPin size={18} className="text-gray-400 mr-2 shrink-0" />
-                        <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Where? (e.g. Raipur)" className="w-full bg-transparent outline-none text-sm dark:text-white placeholder-gray-400" />
-                      </div>
-                      <div className="flex items-center px-4 py-2 flex-1">
-                        <Search size={18} className="text-gray-400 mr-2 shrink-0" />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search services..." className="w-full bg-transparent outline-none text-sm dark:text-white placeholder-gray-400" />
-                      </div>
-                      <button className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-2.5 ml-1 transition cursor-pointer">
-                        <Search size={18} />
-                      </button>
-                   </div>
+                  <button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl md:rounded-full py-4 px-8 md:p-5 w-full md:w-auto ml-0 md:ml-2 mt-2 md:mt-0 transition-all cursor-pointer flex items-center justify-center gap-2 font-bold shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    <Search size={20} className="hidden md:block" />
+                    <span className="md:hidden">Search Services</span>
+                  </button>
+              </div>
+
+              {/* Enhanced Categories Section */}
+              <div className="mb-12 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between mb-6">
+                   <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white shrink-0 tracking-tight">Explore Categories</h3>
                 </div>
 
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar snap-x">
                   <button 
                     onClick={() => setActiveMainCategory("All")}
-                    className={`px-6 py-3 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer ${activeMainCategory === "All" ? "bg-indigo-600 text-white shadow-md" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"}`}
+                    className={`snap-start px-8 py-3.5 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer flex-shrink-0 border ${activeMainCategory === "All" ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md border-transparent" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700 hover:border-gray-300"}`}
                   >
                     All Services
                   </button>
@@ -291,7 +345,7 @@ export default function App() {
                       <button 
                         key={catKey} 
                         onClick={() => setActiveMainCategory(catName)} 
-                        className={`px-6 py-3 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer ${activeMainCategory === catName ? "bg-indigo-600 text-white shadow-md" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"}`}
+                        className={`snap-start px-8 py-3.5 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer flex-shrink-0 border ${activeMainCategory === catName ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md border-transparent" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700 hover:border-gray-300"}`}
                       >
                         {catName} 
                       </button>
@@ -300,16 +354,18 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Enhanced Subcategories */}
               {activeMainCategory !== "All" && subCategories.length > 0 && (
-                <div className="mb-12 animate-in slide-in-from-top-4 duration-300">
-                  <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Filter by Type</h4>
+                <div className="mb-14 animate-in slide-in-from-top-4 duration-300 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">Refine Search</h4>
                   <div className="flex flex-wrap gap-3">
                     {subCategories.map((sub) => (
                       <button 
                         key={sub.id || sub.name} 
                         onClick={() => setActiveSubCategory(sub)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${activeSubCategory?.id === sub.id ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300"}`}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${activeSubCategory?.id === sub.id ? "bg-indigo-600 text-white shadow-md transform scale-105" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-600"}`}
                       >
+                        {activeSubCategory?.id === sub.id && <CheckCircle size={14} />}
                         {sub.name}
                       </button>
                     ))}
@@ -317,33 +373,37 @@ export default function App() {
                 </div>
               )}
 
-              <div>
-                <div className="flex items-center gap-3 mb-8">
-                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {/* Service Listings Grid */}
+              <div className="animate-in fade-in duration-700 delay-150">
+                <div className="flex items-center justify-between mb-8">
+                   <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
                     {activeMainCategory === "All" 
-                      ? "Popular Services" 
+                      ? "Trending Services" 
                       : (activeSubCategory ? activeSubCategory.name : activeMainCategory)} 
                     </h3>
-                  {isLoadingData && <Loader2 className="animate-spin text-indigo-600" size={20} />}
+                  {isLoadingData && <Loader2 className="animate-spin text-indigo-600" size={24} />}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                   {filteredListings.length > 0 ? (
                     filteredListings.map((item, i) => (
-                      <ServiceCard 
-                        key={item.id || i} 
-                        item={item} 
-                        onCardClick={(selectedItem) => {
-                          setBookingService(selectedItem);
-                          setActivePage("service-details");
-                        }}
-                        onPreviewClick={(selectedItem) => setSelectedModalListing(selectedItem)}
-                      />
+                      <div key={item.id || i} className="animate-in zoom-in-95 duration-500" style={{ animationDelay: `${i * 50}ms` }}>
+                        <ServiceCard 
+                          item={item} 
+                          onCardClick={(selectedItem) => {
+                            setBookingService(selectedItem);
+                            setActivePage("service-details");
+                          }}
+                          onPreviewClick={(selectedItem) => setSelectedModalListing(selectedItem)}
+                        />
+                      </div>
                     ))
                   ) : (
                     !isLoadingData && (
-                      <div className="col-span-full py-12 text-center bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                        <p className="text-gray-500 dark:text-gray-400 text-lg">No services found for your search.</p>
+                      <div className="col-span-full py-20 text-center bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                        <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No services found</h3>
+                        <p className="text-gray-500 dark:text-gray-400">Try adjusting your filters or search terms.</p>
                       </div>
                     )
                   )}
