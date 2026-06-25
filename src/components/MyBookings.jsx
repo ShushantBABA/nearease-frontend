@@ -249,9 +249,11 @@ export default function MyBookings() {
             const servicePrice = booking.price || booking.serviceOffering?.price || 0;
             const totalWithFee = servicePrice + 50;
             const note = booking.CostumerRequest || booking.customerRequest || booking.note;
+            
             const hasBeenReviewed = booking.hasReviewed || reviewedIds.some(id => String(id) === String(booking.id));
 
-            // THE FIX: Combine both post-payment states so the frontend knows the customer has paid
+            // THE FIX: This variable ensures the UI knows the customer paid, 
+            // even if the admin has already forwarded the money to the provider!
             const isPaid = booking.paymentStatus === "PAID_TO_PLATFORM" || booking.paymentStatus === "TRANSFER_TO_PROVIDER";
 
             return (
