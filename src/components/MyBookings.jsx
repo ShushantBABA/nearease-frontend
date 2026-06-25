@@ -249,8 +249,10 @@ export default function MyBookings() {
             const servicePrice = booking.price || booking.serviceOffering?.price || 0;
             const totalWithFee = servicePrice + 50;
             const note = booking.CostumerRequest || booking.customerRequest || booking.note;
-            
             const hasBeenReviewed = booking.hasReviewed || reviewedIds.some(id => String(id) === String(booking.id));
+
+            // THE FIX: Combine both post-payment states so the frontend knows the customer has paid
+            const isPaid = booking.paymentStatus === "PAID_TO_PLATFORM" || booking.paymentStatus === "TRANSFER_TO_PROVIDER";
 
             return (
               <div key={booking.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md relative group">
@@ -259,6 +261,7 @@ export default function MyBookings() {
                   <Trash2 size={18} />
                 </button>
 
+                {/* --- SMART BANNERS --- */}
                 {booking.bookingStatus === "PENDING" && !isPast && (
                   <div className="bg-yellow-50 text-yellow-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-yellow-100">
                     <Clock size={16} /> Request sent. Waiting for provider approval.
@@ -269,27 +272,29 @@ export default function MyBookings() {
                     <AlertCircle size={16} /> Request Expired. The scheduled time has passed without provider approval.
                   </div>
                 )}
-                {booking.bookingStatus === "CONFIRMED" && booking.paymentStatus === "PAID_TO_PLATFORM" && (
+                
+                {booking.bookingStatus === "CONFIRMED" && isPaid && (
                   <div className="bg-emerald-50 text-emerald-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-emerald-100">
                     <ShieldCheck size={16} /> Payment secured in Escrow. Waiting for provider to complete the job.
                   </div>
                 )}
-                {booking.bookingStatus === "CONFIRMED" && booking.paymentStatus !== "PAID_TO_PLATFORM" && (
+                {booking.bookingStatus === "CONFIRMED" && !isPaid && (
                   <div className="bg-blue-50 text-blue-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-blue-100">
                     <CheckCircle size={16} /> Request accepted! Please complete payment to secure your slot.
                   </div>
                 )}
-                {/* --- ADDED BANNER FOR UNPAID COMPLETED JOBS --- */}
-                {booking.bookingStatus === "COMPLETED" && booking.paymentStatus !== "PAID_TO_PLATFORM" && (
+
+                {booking.bookingStatus === "COMPLETED" && !isPaid && (
                   <div className="bg-amber-50 text-amber-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-amber-100">
                     <AlertCircle size={16} /> Service marked as completed! Please settle your payment to receive your invoice.
                   </div>
                 )}
-                {booking.bookingStatus === "COMPLETED" && booking.paymentStatus === "PAID_TO_PLATFORM" && (
+                {booking.bookingStatus === "COMPLETED" && isPaid && (
                   <div className="bg-green-50 text-green-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-green-100">
                     <CheckCircle size={16} /> The service has been completed successfully.
                   </div>
                 )}
+
                 {booking.bookingStatus === "REJECTED" && (
                   <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
                     <XCircle size={16} /> Your request has been rejected by the provider.
@@ -331,22 +336,21 @@ export default function MyBookings() {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-gray-700">
-                    {/* --- FLEXIBLE PAYMENT FLOW CONTROLS --- */}
                     
-                    {/* 1. Only show Cancel if it's PENDING or CONFIRMED (but not COMPLETED) */}
-                    {(booking.bookingStatus === "PENDING" || (booking.bookingStatus === "CONFIRMED" && booking.paymentStatus !== "PAID_TO_PLATFORM")) && !isPast && (
+                    {/* 1. Only show Cancel if it's PENDING or CONFIRMED (and Unpaid) */}
+                    {(booking.bookingStatus === "PENDING" || (booking.bookingStatus === "CONFIRMED" && !isPaid)) && !isPast && (
                       <button onClick={() => handleInitiateCancel(booking.id)} className="text-gray-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg font-semibold transition-colors">Cancel Booking</button>
                     )}
 
-                    {/* 2. Show Pay Now if Confirmed or Completed, as long as it's unpaid */}
-                    {(booking.bookingStatus === "CONFIRMED" || booking.bookingStatus === "COMPLETED") && booking.paymentStatus !== "PAID_TO_PLATFORM" && (
+                    {/* 2. Show Pay Now if Confirmed or Completed, as long as it's UNPAID */}
+                    {(booking.bookingStatus === "CONFIRMED" || booking.bookingStatus === "COMPLETED") && !isPaid && (
                       <button onClick={() => handlePayment(booking)} className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-lg font-bold transition-all shadow-md flex items-center gap-2 transform hover:-translate-y-0.5">
                         <DollarSign size={18} /> Pay Now (₹{totalWithFee})
                       </button>
                     )}
                     
-                    {/* 3. Can only review and print bill if they have ACTUALLY paid for the completed service */}
-                    {booking.bookingStatus === "COMPLETED" && booking.paymentStatus === "PAID_TO_PLATFORM" && (
+                    {/* 3. Review and print bill now properly looks for the `isPaid` helper variable! */}
+                    {booking.bookingStatus === "COMPLETED" && isPaid && (
                       <>
                         <button onClick={() => printBill(booking)} className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2">
                           <Printer size={18} /> Print Bill
