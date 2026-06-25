@@ -124,8 +124,8 @@ export default function Navbar({
                 <button onClick={() => setActivePage("provider-dashboard")} className={getNavStyle("provider-dashboard", "indigo")}>
                   <LayoutDashboard size={18} /> Dashboard
                 </button>
-                <button onClick={() => setActivePage("add-service")} className={getNavStyle("add-service", "emerald")}>
-                  <PlusCircle size={18} /> Add Service
+                <button onClick={() => setActivePage("bookings")} className={getNavStyle("bookings", "emerald")}>
+                  <Calendar size={18} /> My Bookings
                 </button>
                 <button onClick={() => setActivePage("my-reviews")} className={getNavStyle("my-reviews", "amber")}>
                   <Star size={18} /> My Reviews

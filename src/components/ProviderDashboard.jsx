@@ -471,7 +471,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                       </button>
                       {/* Note for the provider if payment hasn't been collected yet */}
                       {job.paymentStatus !== "PAID_TO_PLATFORM" && (
-                         <p className="text-center text-xs text-amber-600 mt-3 font-medium">Customer has chosen to pay after completion.</p>
+                         <p className="text-center text-xs text-amber-600 mt-3 font-medium">Customer can pay before or after the completion of the service.</p>
                       )}
                     </div>
                   )}
