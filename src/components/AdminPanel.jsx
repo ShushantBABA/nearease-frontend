@@ -65,7 +65,13 @@ export default function AdminPanel() {
   };
 
   const handlePayout = async (bookingId) => {
-    if (!window.confirm(`Are you sure you want to release funds to the provider for Booking #${bookingId}?`)) return;
+    // THE FIX: Calculate the 10% commission cut for the confirmation alert
+    const bookingToPay = bookings.find(b => b.id === bookingId);
+    const servicePrice = bookingToPay?.price || bookingToPay?.serviceOffering?.price || 0;
+    const platformFee = servicePrice * 0.10;
+    const providerCut = servicePrice - platformFee;
+
+    if (!window.confirm(`Are you sure you want to release funds for Booking #${bookingId}?\n\nProvider receives: ₹${providerCut.toFixed(2)}\nPlatform keeps (10% fee): ₹${platformFee.toFixed(2)}`)) return;
     
     setProcessingId(bookingId);
     try {
@@ -97,18 +103,23 @@ export default function AdminPanel() {
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
       booking.id?.toString().includes(searchQuery) || 
-      (booking.provider?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (booking.provider?.user?.firstName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (booking.customer?.firstName || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
+  // THE FIX: Updated financial calculations to account for the 10% Platform Commission
   const totalEscrow = bookings
     .filter(b => b.paymentStatus === "PAID_TO_PLATFORM")
     .reduce((sum, b) => sum + (b.price || b.serviceOffering?.price || 0), 0);
 
-  const totalPaidOut = bookings
+  const grossTransferred = bookings
     .filter(b => b.paymentStatus === "TRANSFER_TO_PROVIDER")
     .reduce((sum, b) => sum + (b.price || b.serviceOffering?.price || 0), 0);
+
+  // Split the released funds into Platform Revenue (10%) and Provider Payouts (90%)
+  const platformRevenue = grossTransferred * 0.10;
+  const totalPaidOutToProviders = grossTransferred * 0.90;
 
   if (isLoading) {
     return (
@@ -224,23 +235,34 @@ export default function AdminPanel() {
       {/* ========================================== */}
       {activeTab === "financials" && (
         <div className="animate-in fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* THE FIX: Upgraded Dashboard grid from 3 to 4 panels to include Platform Revenue */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
             <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
               <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><DollarSign size={120} /></div>
               <p className="text-indigo-100 font-semibold mb-1 relative z-10">Funds in Escrow</p>
-              <h3 className="text-4xl font-black relative z-10">₹{totalEscrow}</h3>
+              <h3 className="text-4xl font-black relative z-10">₹{totalEscrow.toFixed(2)}</h3>
               <p className="text-sm text-indigo-200 mt-2 relative z-10">Secured Platform Payments</p>
+            </div>
+
+            {/* THE NEW PANEL: Platform Revenue */}
+            <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+              <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><Briefcase size={120} /></div>
+              <p className="text-purple-100 font-semibold mb-1 relative z-10">Platform Revenue</p>
+              <h3 className="text-4xl font-black relative z-10">₹{platformRevenue.toFixed(2)}</h3>
+              <p className="text-sm text-purple-200 mt-2 relative z-10">10% Commission Earned</p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-semibold mb-1">Total Paid Out</p>
-                  <h3 className="text-3xl font-black text-gray-900 dark:text-white">₹{totalPaidOut}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 font-semibold mb-1">Provider Payouts</p>
+                  {/* Displays only the 90% sent to providers */}
+                  <h3 className="text-3xl font-black text-gray-900 dark:text-white">₹{totalPaidOutToProviders.toFixed(2)}</h3>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400"><CheckCircle size={24} /></div>
               </div>
-              <p className="text-sm text-gray-400 mt-4 flex items-center gap-1"><ArrowRightLeft size={14} /> Transferred to Providers</p>
+              <p className="text-sm text-gray-400 mt-4 flex items-center gap-1"><ArrowRightLeft size={14} /> Transferred (90%)</p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
@@ -288,7 +310,12 @@ export default function AdminPanel() {
                   {filteredBookings.length === 0 ? (
                     <tr><td colSpan="6" className="p-8 text-center text-gray-500">No bookings found.</td></tr>
                   ) : (
-                    filteredBookings.map((booking) => (
+                    filteredBookings.map((booking) => {
+                      // Calculate row-specific breakdown
+                      const rowPrice = booking.price || booking.serviceOffering?.price || 0;
+                      const rowFee = rowPrice * 0.10;
+                      
+                      return (
                       <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                         <td className="p-4">
                           <p className="font-bold text-gray-900 dark:text-white">#{booking.id}</p>
@@ -296,7 +323,17 @@ export default function AdminPanel() {
                         </td>
                         <td className="p-4"><p className="font-medium text-gray-900 dark:text-gray-200">{booking.provider?.user?.firstName ? `${booking.provider.user.firstName} ${booking.provider.user.lastName}`: "N/A"}</p></td>
                         <td className="p-4"><p className="text-sm text-gray-700 dark:text-gray-300">{booking.customer?.firstName} {booking.customer?.lastName}</p></td>
-                        <td className="p-4"><p className="font-bold text-indigo-600 dark:text-indigo-400">₹{booking.price || booking.serviceOffering?.price || 0}</p></td>
+                        <td className="p-4">
+                          <div className="flex flex-col">
+                             <p className="font-bold text-indigo-600 dark:text-indigo-400">₹{rowPrice}</p>
+                             {/* THE FIX: Visually display the 10% fee deduction if paid */}
+                             {(booking.paymentStatus === "PAID_TO_PLATFORM" || booking.paymentStatus === "TRANSFER_TO_PROVIDER") && (
+                                <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mt-0.5">
+                                  Fee: -₹{rowFee.toFixed(2)}
+                                </p>
+                             )}
+                          </div>
+                        </td>
                         <td className="p-4">
                           {booking.paymentStatus === "PAID_TO_PLATFORM" ? (
                             <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">Secured in Escrow</span>
@@ -309,7 +346,6 @@ export default function AdminPanel() {
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {/* FLEXIBLE ESCROW LOGIC CHECK FOR ADMIN ACTIONS */}
                           {booking.bookingStatus === "COMPLETED" && booking.paymentStatus === "PAID_TO_PLATFORM" ? (
                             <div className="flex justify-end gap-2">
                               <button onClick={() => handleRefund(booking.id)} disabled={processingId === booking.id} className="px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition">Refund</button>
@@ -324,7 +360,8 @@ export default function AdminPanel() {
                           )}
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

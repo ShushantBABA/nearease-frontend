@@ -32,13 +32,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
   const [editFile, setEditFile] = useState(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
-  const mockGraphData = [
-    { day: "Mon", height: "40%", amount: 400 }, { day: "Tue", height: "70%", amount: 700 },
-    { day: "Wed", height: "30%", amount: 300 }, { day: "Thu", height: "90%", amount: 900 },
-    { day: "Fri", height: "50%", amount: 500 }, { day: "Sat", height: "100%", amount: 1000 },
-    { day: "Sun", height: "60%", amount: 600 }
-  ];
-
   useEffect(() => { refreshDashboardData(); }, []);
 
   const refreshDashboardData = async () => {
@@ -345,23 +338,63 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- EARNINGS GRAPH --- */}
+      {/* --- EARNINGS HISTORY PASSBOOK --- */}
       {activeTab === "earnings" && (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm animate-in fade-in">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3"><TrendingUp className="text-green-600" /><h2 className="text-xl font-bold dark:text-white">Earnings History</h2></div>
-            <span className="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full font-bold text-gray-600 dark:text-gray-300">This Week</span>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b border-gray-100 dark:border-gray-700 pb-6 gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center shadow-inner">
+                <DollarSign size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black dark:text-white">Earnings Passbook</h2>
+                <p className="text-sm font-medium text-gray-500">Your completed job transaction history</p>
+              </div>
+            </div>
+            <div className="text-left md:text-right">
+               <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Total Net Earnings</p>
+               <h3 className="text-4xl font-black text-green-600 dark:text-green-400">₹{dashboardData?.totalEarning || 0}</h3>
+            </div>
           </div>
           
-          <div className="h-64 flex items-end justify-between gap-2 px-2 md:px-10 pb-6 border-b border-gray-100 dark:border-gray-700 relative">
-             <div className="absolute left-0 top-0 h-full border-l border-gray-100 dark:border-gray-700 pointer-events-none"></div>
-             {mockGraphData.map((data, index) => (
-                <div key={index} className="flex flex-col items-center flex-1 group">
-                  <span className="text-xs font-bold text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity mb-2">₹{data.amount}</span>
-                  <div className="w-full max-w-[40px] bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-xl transition-all duration-700 hover:brightness-110 shadow-sm" style={{ height: data.height }}></div>
-                  <span className="text-xs text-gray-500 font-medium mt-3">{data.day}</span>
-                </div>
-             ))}
+          <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {requests.filter(req => req.bookingStatus === "COMPLETED").length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">No transaction history yet.</p>
+              </div>
+            ) : (
+              [...requests]
+                .filter(req => req.bookingStatus === "COMPLETED")
+                .sort((a, b) => new Date(b.scheduledTime || b.scheduleTime) - new Date(a.scheduledTime || a.scheduleTime))
+                .map((job) => {
+                  const grossAmount = job.price || job.serviceOffering?.price || 0;
+                  
+                  return (
+                    <div key={job.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow group gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-700 group-hover:scale-110 transition-transform shrink-0">
+                          <TrendingUp size={20} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white text-lg">{job.ServiceName || job.serviceOffering?.name || job.serviceOffering?.serviceTitle || "Service Payout"}</p>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 font-medium mt-1.5">
+                            <span className="flex items-center gap-1"><Calendar size={12} className="text-indigo-400" /> {new Date(job.scheduledTime || job.scheduleTime).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1"><Clock size={12} className="text-indigo-400" /> {new Date(job.scheduledTime || job.scheduleTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="flex items-center gap-1"><User size={12} className="text-indigo-400" /> {job.customer?.firstName} {job.customer?.lastName}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <p className="text-xl font-black text-green-600 dark:text-green-400">+₹{grossAmount}</p>
+                        <span className={`inline-block mt-1 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md border ${job.paymentStatus === "TRANSFER_TO_PROVIDER" ? "bg-green-100 text-green-800 border-green-200" : "bg-amber-100 text-amber-800 border-amber-200"}`}>
+                           {job.paymentStatus === "TRANSFER_TO_PROVIDER" ? "Settled" : "Escrow / Pending"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+              })
+            )}
           </div>
         </div>
       )}
