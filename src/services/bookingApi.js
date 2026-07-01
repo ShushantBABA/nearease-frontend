@@ -39,21 +39,10 @@ const fetchWithAuth = async (url, options = {}) => {
   }
   
   const text = await res.text();
-  const data = text ? JSON.parse(text) : {};
-
-  // THE FIX: Catch soft errors where the backend returns 200 OK but success is false
-  if (data && data.success === false) {
-     throw new Error(data.message || "Action failed on the server.");
-  }
-
-  return data;
+  return text ? JSON.parse(text) : {};
 };
 
 export const BookingAPI = {
-  getAllPlatformBookings: async () => {
-    return fetchWithAuth(`${BASE_URL}/admin/all-bookings`, { headers: getHeaders() });
-  },
-
   getAllBookings: async () => {
     return fetchWithAuth(`${BASE_URL}/all-bookings`, { headers: getHeaders() });
   },
@@ -77,13 +66,11 @@ export const BookingAPI = {
     });
   },
 
-  // THE FIX: Pass OTP cleanly as a query parameter so Spring Boot parses it correctly
   completeBooking: async (bookingId, formData) => {
     const token = getAuthToken();
     return fetchWithAuth(`${BASE_URL}/${bookingId}/complete`, {
       method: "PUT",
       headers: { 
-        // We ONLY send Authorization. 
         // DO NOT set Content-Type; the browser must set it automatically for FormData!
         "Authorization": token ? `Bearer ${token}` : "" 
       },
@@ -93,19 +80,24 @@ export const BookingAPI = {
 
   sendBookingOtp: async (bookingId) => {
     return fetchWithAuth(`${BASE_URL}/${bookingId}/send-otp`, { 
-      method: "POST", headers: getHeaders() 
+      method: "POST", 
+      headers: getHeaders() 
     });
   },
 
+  // --- NEW: Cancellation Endpoints matching your Spring Boot Controller ---
   requestCancel: async (bookingId) => {
-    return fetchWithAuth(`${BASE_URL}/${bookingId}/cancel/request`, { 
-      method: "POST", headers: getHeaders() 
+    return fetchWithAuth(`${BASE_URL}/${bookingId}/cancel/request`, {
+      method: "POST",
+      headers: getHeaders()
     });
   },
-  
+
   confirmCancel: async (bookingId, otp) => {
-    return fetchWithAuth(`${BASE_URL}/${bookingId}/cancel/confirm?otp=${otp}`, { 
-      method: "POST", headers: getHeaders() 
+    // THE FIX: Appended ?otp=... to match the @RequestParam in Spring Boot
+    return fetchWithAuth(`${BASE_URL}/${bookingId}/cancel/confirm?otp=${otp}`, {
+      method: "POST",
+      headers: getHeaders()
     });
   }
 };

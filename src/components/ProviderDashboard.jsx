@@ -57,7 +57,7 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
       if (newStatus === "REJECTED") {
         setRequests(requests.filter(req => req.id !== bookingId));
       } else {
-        setRequests(requests.map(req => req.id === bookingId ? { ...req, bookingStatus: "CONFIRMED" } : req));
+        setRequests(requests.map(req => req.id === bookingId ? { ...req, bookingStatus: statusToSend } : req));
       }
     } catch (error) { window.alert(`Failed to update request.`); }
   };
@@ -178,8 +178,9 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
           <div className="flex flex-col gap-3">
             <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center"><DollarSign size={24} /></div>
             <div>
-              <p className="text-sm font-bold text-gray-500">Total Earnings</p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white">₹{dashboardData?.totalEarning || 0}</h3>
+              <p className="text-sm font-bold text-gray-500">Total Net Earnings</p>
+              {/* BACKEND SOURCE OF TRUTH: Directly reading from dashboardData */}
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white">₹{dashboardData?.totalEarning?.toFixed(2) || 0}</h3>
             </div>
           </div>
         </div>
@@ -353,7 +354,8 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
             </div>
             <div className="text-left md:text-right">
                <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Total Net Earnings</p>
-               <h3 className="text-4xl font-black text-green-600 dark:text-green-400">₹{dashboardData?.totalEarning || 0}</h3>
+               {/* BACKEND SOURCE OF TRUTH: Directly reading from dashboardData */}
+               <h3 className="text-4xl font-black text-green-600 dark:text-green-400">₹{dashboardData?.totalEarning?.toFixed(2) || 0}</h3>
             </div>
           </div>
           
@@ -368,7 +370,12 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                 .filter(req => req.bookingStatus === "COMPLETED")
                 .sort((a, b) => new Date(b.scheduledTime || b.scheduleTime) - new Date(a.scheduledTime || a.scheduleTime))
                 .map((job) => {
+                  
+                  // THE FIX: Graceful fallback logic so math is always correct 
+                  // even if the backend DTO hasn't been fully updated yet!
                   const grossAmount = job.price || job.serviceOffering?.price || 0;
+                  const feeAmount = job.platformCommission !== undefined ? job.platformCommission : (grossAmount * 0.10);
+                  const netAmount = job.netEarning !== undefined ? job.netEarning : (grossAmount - feeAmount);
                   
                   return (
                     <div key={job.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow group gap-4">
@@ -386,8 +393,13 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                         </div>
                       </div>
                       <div className="text-left sm:text-right">
-                        <p className="text-xl font-black text-green-600 dark:text-green-400">+₹{grossAmount}</p>
-                        <span className={`inline-block mt-1 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md border ${job.paymentStatus === "TRANSFER_TO_PROVIDER" ? "bg-green-100 text-green-800 border-green-200" : "bg-amber-100 text-amber-800 border-amber-200"}`}>
+                        <p className="text-xl font-black text-green-600 dark:text-green-400">+₹{Number(netAmount).toFixed(2)}</p>
+                        
+                        <p className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">
+                           Gross: ₹{grossAmount} <span className="text-red-400">(-₹{Number(feeAmount).toFixed(2)} Fee)</span>
+                        </p>
+
+                        <span className={`inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md border ${job.paymentStatus === "TRANSFER_TO_PROVIDER" ? "bg-green-100 text-green-800 border-green-200" : "bg-amber-100 text-amber-800 border-amber-200"}`}>
                            {job.paymentStatus === "TRANSFER_TO_PROVIDER" ? "Settled" : "Escrow / Pending"}
                         </span>
                       </div>
@@ -399,7 +411,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- REQUESTS & HISTORY TABS --- */}
       {(activeTab === "requests" || activeTab === "completed" || activeTab === "overview") && (
         <div className="space-y-6 animate-in fade-in">
           <h2 className="text-xl font-bold dark:text-white">{activeTab === "completed" ? "Job History" : "Active Service Requests"}</h2>
@@ -427,8 +438,14 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">₹{providerCost}</p>
-                      <span className="inline-block mt-1 px-3 py-1 text-xs font-bold rounded-full uppercase bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        {job.bookingStatus}
+                      
+                      {/* Formatted Status text to remove underscores */}
+                      <span className={`inline-block mt-1 px-3 py-1 text-xs font-bold rounded-full uppercase ${
+                        job.bookingStatus === 'CANCELLED' || job.bookingStatus === 'CANCELLED_BY_PROVIDER' 
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' 
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}>
+                        {job.bookingStatus.replace(/_/g, ' ')}
                       </span>
                     </div>
                   </div>
@@ -496,15 +513,25 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     </div>
                   )}
 
-                  {/* --- FLEXIBLE FLOW: ALLOW COMPLETION WITHOUT PAYMENT CHECK --- */}
+                  {/* THE FIX: Added cancellation button mapping exactly to CANCELLED_BY_PROVIDER */}
                   {(job.bookingStatus === "CONFIRMED" || job.bookingStatus === "ACCEPTED") && (
-                    <div className="pt-2 mt-4">
-                      <button onClick={() => handleInitiateCompletion(job.id)} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-bold hover:bg-green-600 transition flex justify-center items-center gap-2 shadow-sm cursor-pointer">
-                        <CheckCircle size={20} /> Mark as Complete
-                      </button>
-                      {/* Note for the provider if payment hasn't been collected yet */}
+                    <div className="pt-2 mt-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <button onClick={() => {
+                          if (window.confirm("Are you sure you want to cancel this booking?")) {
+                            handleStatusChange(job.id, "CANCELLED_BY_PROVIDER");
+                          }
+                        }} className="flex-1 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3.5 rounded-xl font-bold hover:bg-red-100 transition flex justify-center items-center gap-2 shadow-sm cursor-pointer">
+                          <XCircle size={20} /> Cancel Booking
+                        </button>
+                        
+                        <button onClick={() => handleInitiateCompletion(job.id)} className="flex-[2] bg-green-500 text-white py-3.5 rounded-xl font-bold hover:bg-green-600 transition flex justify-center items-center gap-2 shadow-sm cursor-pointer">
+                          <CheckCircle size={20} /> Mark as Complete
+                        </button>
+                      </div>
+                      
                       {job.paymentStatus !== "PAID_TO_PLATFORM" && (
-                         <p className="text-center text-xs text-amber-600 mt-3 font-medium">Customer can pay before or after the completion of the service.</p>
+                         <p className="text-center text-xs text-amber-600 mt-1 font-medium">Customer can pay before or after the completion of the service.</p>
                       )}
                     </div>
                   )}
@@ -514,7 +541,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- RESTORED COMPLETION MODAL WITH IMAGE UPLOADS --- */}
       {completingJobId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 shadow-2xl rounded-3xl p-8 max-w-sm w-full relative overflow-hidden animate-in zoom-in-95">
@@ -536,7 +562,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
               </div>
 
               <div className="space-y-4 mb-6">
-                {/* OTP Input */}
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Customer OTP</label>
                   <input 
@@ -548,7 +573,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                   />
                 </div>
 
-                {/* Before Image */}
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Before Image <span className="text-gray-400 lowercase font-medium">(Optional)</span></label>
                   <input 
@@ -558,7 +582,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                   />
                 </div>
 
-                {/* After Image */}
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1">After Image <span className="text-green-500 lowercase font-medium">(Builds Portfolio)</span></label>
                   <input 
@@ -580,7 +603,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- PREVIEW MODAL --- */}
       {previewImage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setPreviewImage(null)}>
           <button onClick={() => setPreviewImage(null)} className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 p-2 rounded-full z-10 cursor-pointer"><XCircle size={32} /></button>

@@ -1,12 +1,11 @@
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080") + "/api/admin";
 
-// Helper function to safely extract the token from local storage
 const getAuthToken = () => {
   const savedUser = localStorage.getItem("nearEaseUser");
   if (savedUser) {
     try {
       const userObj = JSON.parse(savedUser);
-      return userObj.token; // Ensure your backend sends it as 'token'
+      return userObj.token; 
     } catch (e) {
       console.error("Failed to parse user from local storage");
       return null;
@@ -15,7 +14,6 @@ const getAuthToken = () => {
   return null;
 };
 
-// 1. Standard headers for JSON requests (FIXED: Now securely attaches the token!)
 const getHeaders = () => {
   const headers = { "Content-Type": "application/json" };
   const token = getAuthToken(); 
@@ -25,7 +23,6 @@ const getHeaders = () => {
   return headers;
 };
 
-// 2. Helper to handle responses safely and throw actual errors
 const fetchWithAuth = async (url, options = {}) => {
   const res = await fetch(url, options);
   
@@ -46,14 +43,12 @@ const fetchWithAuth = async (url, options = {}) => {
 };
 
 export const AdminAPI = {
-  // Fetch applications that need review
   getPendingProviders: async () => {
     return fetchWithAuth(`${BASE_URL}/provider/pending`, {
       headers: getHeaders()
     });
   },
 
-  // Approve a specific provider
   approveProvider: async (id) => {
     return fetchWithAuth(`${BASE_URL}/provider/approve/${id}`, {
       method: "POST",
@@ -61,7 +56,6 @@ export const AdminAPI = {
     });
   },
 
-  // Reject a provider (Optional but recommended)
   rejectProvider: async (id) => {
     return fetchWithAuth(`${BASE_URL}/provider/reject/${id}`, {
       method: "POST",
@@ -75,18 +69,18 @@ export const AdminAPI = {
     });
   },
 
-  // --- ADDED: Escrow Financial Actions ---
+  // --- THE FIX: Updated to match the new endpoints in AdminController.java ---
   processPayout: async (bookingId) => {
-    return fetchWithAuth(`${BASE_URL}/payout/${bookingId}`, { 
-      method: "POST", 
-      headers: getHeaders() 
+    return fetchWithAuth(`${BASE_URL}/payout/${bookingId}`, {
+      method: "POST",
+      headers: getHeaders()
     });
   },
 
   processRefund: async (bookingId) => {
-    return fetchWithAuth(`${BASE_URL}/refund/${bookingId}`, { 
-      method: "POST", 
-      headers: getHeaders() 
+    return fetchWithAuth(`${BASE_URL}/refund/${bookingId}`, {
+      method: "POST",
+      headers: getHeaders()
     });
   }
 };

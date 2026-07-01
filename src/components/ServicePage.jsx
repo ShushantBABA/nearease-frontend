@@ -189,7 +189,7 @@ export default function ServicePage({ service, onBack, onProceedToCheckout, onLo
                     )}
                     {provider.experience && (
                       <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-                         {String(provider.experience)} Experience
+                         {String(provider.experience)} Years of Experience
                       </div>
                     )}
                   </div>

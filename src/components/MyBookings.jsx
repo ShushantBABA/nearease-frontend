@@ -62,7 +62,6 @@ export default function MyBookings() {
         order_id: orderData.razorpayOrderId,
         handler: async function (response) {
           try {
-            // 1. Send the signature to the backend for cryptographic verification
             await PaymentAPI.verifyPayment({
                 bookingId: booking.id,
                 razorpayPaymentId: response.razorpay_payment_id,
@@ -70,7 +69,6 @@ export default function MyBookings() {
                 razorpaySignature: response.razorpay_signature
             });
 
-            // 2. If backend verification succeeds, alert the user and update UI
             alert("Payment Verified & Successful! Your funds are secured in Escrow.");
             localStorage.setItem(`txn_nearEase_${booking.id}`, response.razorpay_order_id);
 
@@ -87,7 +85,6 @@ export default function MyBookings() {
               )
             );
           } catch (err) {
-             // If signature verification fails on the backend, block the UI update
              alert("Payment verification failed! " + err.message);
              console.error("Signature Verification Error:", err);
           }
@@ -138,8 +135,7 @@ export default function MyBookings() {
   const printBill = (booking) => {
     const printWindow = window.open('', '_blank');
     const servicePrice = booking.price || booking.serviceOffering?.price || 0;
-    const platformFee = 50;
-    const totalPaid = servicePrice + platformFee;
+    const totalPaid = servicePrice;
     
     const txnId = booking.transection_id || booking.transectionId || booking.transactionId || localStorage.getItem(`txn_nearEase_${booking.id}`) || 'Awaiting Sync';
 
@@ -194,12 +190,10 @@ export default function MyBookings() {
             <thead><tr><th>Description</th><th style="text-align:right;">Amount</th></tr></thead>
             <tbody>
               <tr><td>${booking.ServiceName || booking.serviceOffering?.name || 'Professional Service'}</td><td style="text-align:right;">₹${servicePrice}</td></tr>
-              <tr><td>Platform Escrow & Safety Fee</td><td style="text-align:right;">₹${platformFee}</td></tr>
             </tbody>
           </table>
           <div class="totals">
             <div class="totals-row"><span>Subtotal:</span><span>₹${servicePrice}</span></div>
-            <div class="totals-row"><span>Platform Fee:</span><span>₹${platformFee}</span></div>
             <div class="totals-row grand-total"><span>Total Paid:</span><span>₹${totalPaid}</span></div>
           </div>
           <div class="footer">Thank you for choosing NearEase.<br/>This is a computer-generated invoice and requires no signature.</div>
@@ -247,13 +241,11 @@ export default function MyBookings() {
           {visibleBookings.map((booking) => {
             const isPast = new Date(booking.scheduledTime) < new Date();
             const servicePrice = booking.price || booking.serviceOffering?.price || 0;
-            const totalWithFee = servicePrice + 50;
+            const totalWithFee = servicePrice;
             const note = booking.CostumerRequest || booking.customerRequest || booking.note;
             
             const hasBeenReviewed = booking.hasReviewed || reviewedIds.some(id => String(id) === String(booking.id));
 
-            // THE FIX: This variable ensures the UI knows the customer paid, 
-            // even if the admin has already forwarded the money to the provider!
             const isPaid = booking.paymentStatus === "PAID_TO_PLATFORM" || booking.paymentStatus === "TRANSFER_TO_PROVIDER";
 
             return (
@@ -307,6 +299,12 @@ export default function MyBookings() {
                     <AlertCircle size={16} /> This booking was cancelled.
                   </div>
                 )}
+                {/* THE FIX: Added a smart banner specific to Provider-side cancellations */}
+                {booking.bookingStatus === "CANCELLED_BY_PROVIDER" && (
+                  <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
+                    <XCircle size={16} /> The provider has cancelled this confirmed booking.
+                  </div>
+                )}
 
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4 pr-10">
@@ -339,19 +337,17 @@ export default function MyBookings() {
 
                   <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-gray-700">
                     
-                    {/* 1. Only show Cancel if it's PENDING or CONFIRMED (and Unpaid) */}
-                    {(booking.bookingStatus === "PENDING" || (booking.bookingStatus === "CONFIRMED" && !isPaid)) && !isPast && (
+                    {/* THE FIX: Unlocked cancellation so users can cancel EVEN IF the payment is done! */}
+                    {(booking.bookingStatus === "PENDING" || booking.bookingStatus === "CONFIRMED") && !isPast && (
                       <button onClick={() => handleInitiateCancel(booking.id)} className="text-gray-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg font-semibold transition-colors">Cancel Booking</button>
                     )}
 
-                    {/* 2. Show Pay Now if Confirmed or Completed, as long as it's UNPAID */}
                     {(booking.bookingStatus === "CONFIRMED" || booking.bookingStatus === "COMPLETED") && !isPaid && (
                       <button onClick={() => handlePayment(booking)} className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-lg font-bold transition-all shadow-md flex items-center gap-2 transform hover:-translate-y-0.5">
                         <DollarSign size={18} /> Pay Now (₹{totalWithFee})
                       </button>
                     )}
                     
-                    {/* 3. Review and print bill now properly looks for the `isPaid` helper variable! */}
                     {booking.bookingStatus === "COMPLETED" && isPaid && (
                       <>
                         <button onClick={() => printBill(booking)} className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2">

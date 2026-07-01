@@ -129,7 +129,6 @@ export default function CheckoutPage({ service, onBack, onComplete }) {
                     <span className="text-gray-500 dark:text-gray-400 font-semibold">Total Service Cost</span>
                     <span className="text-4xl font-black text-gray-900 dark:text-white">₹{servicePrice}</span>
                   </div>
-                  <p className="text-xs text-right text-green-600 dark:text-green-400 font-bold">Platform fees removed • Exact match</p>
                 </div>
               </div>
             </div>

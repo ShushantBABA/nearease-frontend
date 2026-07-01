@@ -9,7 +9,7 @@ import { BookingAPI } from "../services/bookingApi";
 import GoBackButton from "./GoBackButton";
 
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState("verifications"); // 'verifications' or 'financials'
+  const [activeTab, setActiveTab] = useState("verifications"); 
   
   // Data States
   const [pendingApplications, setPendingApplications] = useState([]);
@@ -17,8 +17,8 @@ export default function AdminPanel() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Loading states for individual row actions
-  const [actionLoading, setActionLoading] = useState(null); // For verifications
-  const [processingId, setProcessingId] = useState(null); // For payments
+  const [actionLoading, setActionLoading] = useState(null); 
+  const [processingId, setProcessingId] = useState(null); 
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,7 +65,6 @@ export default function AdminPanel() {
   };
 
   const handlePayout = async (bookingId) => {
-    // THE FIX: Calculate the 10% commission cut for the confirmation alert
     const bookingToPay = bookings.find(b => b.id === bookingId);
     const servicePrice = bookingToPay?.price || bookingToPay?.serviceOffering?.price || 0;
     const platformFee = servicePrice * 0.10;
@@ -108,7 +107,6 @@ export default function AdminPanel() {
     return matchesSearch;
   });
 
-  // THE FIX: Updated financial calculations to account for the 10% Platform Commission
   const totalEscrow = bookings
     .filter(b => b.paymentStatus === "PAID_TO_PLATFORM")
     .reduce((sum, b) => sum + (b.price || b.serviceOffering?.price || 0), 0);
@@ -117,7 +115,6 @@ export default function AdminPanel() {
     .filter(b => b.paymentStatus === "TRANSFER_TO_PROVIDER")
     .reduce((sum, b) => sum + (b.price || b.serviceOffering?.price || 0), 0);
 
-  // Split the released funds into Platform Revenue (10%) and Provider Payouts (90%)
   const platformRevenue = grossTransferred * 0.10;
   const totalPaidOutToProviders = grossTransferred * 0.90;
 
@@ -135,7 +132,6 @@ export default function AdminPanel() {
 
       <GoBackButton/>
       
-      {/* Admin Header & Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center text-red-600 dark:text-red-400 shadow-inner">
@@ -170,9 +166,6 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* TAB 1: PROVIDER VERIFICATIONS */}
-      {/* ========================================== */}
       {activeTab === "verifications" && (
         <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 animate-in fade-in">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
@@ -230,12 +223,8 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* TAB 2: FINANCIALS & ESCROW */}
-      {/* ========================================== */}
       {activeTab === "financials" && (
         <div className="animate-in fade-in">
-          {/* THE FIX: Upgraded Dashboard grid from 3 to 4 panels to include Platform Revenue */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             
             <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -245,7 +234,6 @@ export default function AdminPanel() {
               <p className="text-sm text-indigo-200 mt-2 relative z-10">Secured Platform Payments</p>
             </div>
 
-            {/* THE NEW PANEL: Platform Revenue */}
             <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
               <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><Briefcase size={120} /></div>
               <p className="text-purple-100 font-semibold mb-1 relative z-10">Platform Revenue</p>
@@ -257,7 +245,6 @@ export default function AdminPanel() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-gray-500 dark:text-gray-400 font-semibold mb-1">Provider Payouts</p>
-                  {/* Displays only the 90% sent to providers */}
                   <h3 className="text-3xl font-black text-gray-900 dark:text-white">₹{totalPaidOutToProviders.toFixed(2)}</h3>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400"><CheckCircle size={24} /></div>
@@ -311,7 +298,6 @@ export default function AdminPanel() {
                     <tr><td colSpan="6" className="p-8 text-center text-gray-500">No bookings found.</td></tr>
                   ) : (
                     filteredBookings.map((booking) => {
-                      // Calculate row-specific breakdown
                       const rowPrice = booking.price || booking.serviceOffering?.price || 0;
                       const rowFee = rowPrice * 0.10;
                       
@@ -326,7 +312,6 @@ export default function AdminPanel() {
                         <td className="p-4">
                           <div className="flex flex-col">
                              <p className="font-bold text-indigo-600 dark:text-indigo-400">₹{rowPrice}</p>
-                             {/* THE FIX: Visually display the 10% fee deduction if paid */}
                              {(booking.paymentStatus === "PAID_TO_PLATFORM" || booking.paymentStatus === "TRANSFER_TO_PROVIDER") && (
                                 <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mt-0.5">
                                   Fee: -₹{rowFee.toFixed(2)}
@@ -346,12 +331,16 @@ export default function AdminPanel() {
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {booking.bookingStatus === "COMPLETED" && booking.paymentStatus === "PAID_TO_PLATFORM" ? (
+                          {/* THE FIX: Refined logic to show Refund for Cancelled/Completed bookings that are paid! */}
+                          {booking.paymentStatus === "PAID_TO_PLATFORM" && (booking.bookingStatus === "COMPLETED" || booking.bookingStatus === "CANCELLED" || booking.bookingStatus === "CANCELLED_BY_PROVIDER") ? (
                             <div className="flex justify-end gap-2">
                               <button onClick={() => handleRefund(booking.id)} disabled={processingId === booking.id} className="px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition">Refund</button>
-                              <button onClick={() => handlePayout(booking.id)} disabled={processingId === booking.id} className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm">
-                                {processingId === booking.id ? <Loader2 size={14} className="animate-spin" /> : <DollarSign size={14} />} Release Payout
-                              </button>
+                              
+                              {booking.bookingStatus === "COMPLETED" && (
+                                <button onClick={() => handlePayout(booking.id)} disabled={processingId === booking.id} className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm">
+                                  {processingId === booking.id ? <Loader2 size={14} className="animate-spin" /> : <DollarSign size={14} />} Release Payout
+                                </button>
+                              )}
                             </div>
                           ) : booking.bookingStatus === "COMPLETED" && booking.paymentStatus !== "TRANSFER_TO_PROVIDER" && booking.paymentStatus !== "REFUNDED" ? (
                              <span className="text-xs text-amber-600 font-bold bg-amber-50 px-3 py-1 rounded-lg border border-amber-200">Awaiting Customer Payment</span>
