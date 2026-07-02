@@ -18,7 +18,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
   
   const [hiddenIds, setHiddenIds] = useState(() => JSON.parse(localStorage.getItem("hiddenProviderBookings") || "[]"));
   
-  // Job Completion States
   const [completingJobId, setCompletingJobId] = useState(null);
   const [otpCode, setOtpCode] = useState("");
   const [beforeImage, setBeforeImage] = useState(null);
@@ -26,7 +25,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
   const [isSubmittingOtp, setIsSubmittingOtp] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
-  // Edit Service States
   const [editingService, setEditingService] = useState(null);
   const [editForm, setEditForm] = useState({ title: "", price: "", description: "" });
   const [editFile, setEditFile] = useState(null);
@@ -145,7 +143,9 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
     setEditFile(null);
   };
 
-  const visibleRequests = requests.filter(r => !hiddenIds.includes(r.id));
+  // THE FIX: Define terminal states. Active bookings will ALWAYS be visible, ignoring localStorage traps.
+  const isTerminalState = (status) => ["COMPLETED", "CANCELLED", "CANCELLED_BY_PROVIDER", "REJECTED"].includes(status);
+  const visibleRequests = requests.filter(r => !hiddenIds.includes(r.id) || !isTerminalState(r.bookingStatus));
 
   if (isLoading) return <div className="flex justify-center items-center min-h-[60vh]"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>;
 
@@ -172,14 +172,12 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       </div>
 
-      {/* --- STAT GRID --- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div onClick={() => setActiveTab("earnings")} className={`p-6 rounded-2xl border transition-all cursor-pointer dark:bg-gray-800 hover:shadow-md ${activeTab === "earnings" ? "border-green-500 shadow-md ring-2 ring-green-100 bg-green-50/30 dark:bg-green-900/10" : "border-gray-100 dark:border-gray-700 bg-white"}`}>
           <div className="flex flex-col gap-3">
             <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center"><DollarSign size={24} /></div>
             <div>
               <p className="text-sm font-bold text-gray-500">Total Net Earnings</p>
-              {/* BACKEND SOURCE OF TRUTH: Directly reading from dashboardData */}
               <h3 className="text-2xl font-black text-gray-900 dark:text-white">₹{dashboardData?.totalEarning?.toFixed(2) || 0}</h3>
             </div>
           </div>
@@ -205,7 +203,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
           </div>
         </div>
 
-        {/* MY SERVICES TAB */}
         <div onClick={() => setActiveTab("services")} className={`p-6 rounded-2xl border transition-all cursor-pointer dark:bg-gray-800 hover:shadow-md ${activeTab === "services" ? "border-purple-500 shadow-md ring-2 ring-purple-100 bg-purple-50/30 dark:bg-purple-900/10" : "border-gray-100 dark:border-gray-700 bg-white"}`}>
           <div className="flex flex-col gap-3">
             <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center"><Settings2 size={24} /></div>
@@ -217,7 +214,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       </div>
 
-      {/* --- MY SERVICES VIEW --- */}
       {activeTab === "services" && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-3 mb-6">
@@ -269,7 +265,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- EDIT SERVICE MODAL --- */}
       {editingService && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl border border-white/50 dark:border-gray-700/50 shadow-2xl rounded-[2rem] p-8 max-w-lg w-full relative overflow-hidden animate-in zoom-in-95 duration-300">
@@ -339,7 +334,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         </div>
       )}
 
-      {/* --- EARNINGS HISTORY PASSBOOK --- */}
       {activeTab === "earnings" && (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm animate-in fade-in">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 border-b border-gray-100 dark:border-gray-700 pb-6 gap-4">
@@ -354,7 +348,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
             </div>
             <div className="text-left md:text-right">
                <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Total Net Earnings</p>
-               {/* BACKEND SOURCE OF TRUTH: Directly reading from dashboardData */}
                <h3 className="text-4xl font-black text-green-600 dark:text-green-400">₹{dashboardData?.totalEarning?.toFixed(2) || 0}</h3>
             </div>
           </div>
@@ -370,9 +363,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                 .filter(req => req.bookingStatus === "COMPLETED")
                 .sort((a, b) => new Date(b.scheduledTime || b.scheduleTime) - new Date(a.scheduledTime || a.scheduleTime))
                 .map((job) => {
-                  
-                  // THE FIX: Graceful fallback logic so math is always correct 
-                  // even if the backend DTO hasn't been fully updated yet!
                   const grossAmount = job.price || job.serviceOffering?.price || 0;
                   const feeAmount = job.platformCommission !== undefined ? job.platformCommission : (grossAmount * 0.10);
                   const netAmount = job.netEarning !== undefined ? job.netEarning : (grossAmount - feeAmount);
@@ -427,9 +417,12 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                 return (
                 <div key={job.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 relative">
                   
-                  <button onClick={() => handleDeleteCard(job.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-full shadow-sm cursor-pointer" title="Delete from dashboard">
-                    <Trash2 size={18} />
-                  </button>
+                  {/* THE FIX: Only allow deletion if the booking is finished/terminal */}
+                  {isTerminalState(job.bookingStatus) && (
+                    <button onClick={() => handleDeleteCard(job.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-full shadow-sm cursor-pointer" title="Delete from dashboard">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
 
                   <div className="flex justify-between items-start mb-4 pr-12">
                     <div>
@@ -439,7 +432,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     <div className="text-right">
                       <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">₹{providerCost}</p>
                       
-                      {/* Formatted Status text to remove underscores */}
                       <span className={`inline-block mt-1 px-3 py-1 text-xs font-bold rounded-full uppercase ${
                         job.bookingStatus === 'CANCELLED' || job.bookingStatus === 'CANCELLED_BY_PROVIDER' 
                           ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' 
@@ -513,7 +505,6 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                     </div>
                   )}
 
-                  {/* THE FIX: Added cancellation button mapping exactly to CANCELLED_BY_PROVIDER */}
                   {(job.bookingStatus === "CONFIRMED" || job.bookingStatus === "ACCEPTED") && (
                     <div className="pt-2 mt-4 space-y-3">
                       <div className="flex flex-col sm:flex-row gap-3">

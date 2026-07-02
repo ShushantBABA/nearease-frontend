@@ -219,7 +219,9 @@ export default function MyBookings() {
     setReviewModalOpen(false);
   };
 
-  const visibleBookings = bookings.filter(b => !hiddenIds.includes(b.id));
+  // THE FIX: Define terminal states. Active bookings will ALWAYS be visible, ignoring localStorage traps.
+  const isTerminalState = (status) => ["COMPLETED", "CANCELLED", "CANCELLED_BY_PROVIDER", "REJECTED"].includes(status);
+  const visibleBookings = bookings.filter(b => !hiddenIds.includes(b.id) || !isTerminalState(b.bookingStatus));
 
   if (isLoading) return <div className="flex justify-center items-center min-h-[60vh]"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>;
   if (error) return <div className="text-center mt-20 text-red-500 font-bold">{error}</div>;
@@ -245,15 +247,17 @@ export default function MyBookings() {
             const note = booking.CostumerRequest || booking.customerRequest || booking.note;
             
             const hasBeenReviewed = booking.hasReviewed || reviewedIds.some(id => String(id) === String(booking.id));
-
             const isPaid = booking.paymentStatus === "PAID_TO_PLATFORM" || booking.paymentStatus === "TRANSFER_TO_PROVIDER";
 
             return (
               <div key={booking.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md relative group">
                 
-                <button onClick={() => handleDeleteCard(booking.id)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors p-2 bg-white/80 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 shadow-sm z-10" title="Remove from view">
-                  <Trash2 size={18} />
-                </button>
+                {/* THE FIX: Only allow deletion if the booking is finished/terminal */}
+                {isTerminalState(booking.bookingStatus) && (
+                  <button onClick={() => handleDeleteCard(booking.id)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors p-2 bg-white/80 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 shadow-sm z-10" title="Remove from view">
+                    <Trash2 size={18} />
+                  </button>
+                )}
 
                 {/* --- SMART BANNERS --- */}
                 {booking.bookingStatus === "PENDING" && !isPast && (
@@ -299,7 +303,6 @@ export default function MyBookings() {
                     <AlertCircle size={16} /> This booking was cancelled.
                   </div>
                 )}
-                {/* THE FIX: Added a smart banner specific to Provider-side cancellations */}
                 {booking.bookingStatus === "CANCELLED_BY_PROVIDER" && (
                   <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
                     <XCircle size={16} /> The provider has cancelled this confirmed booking.
@@ -337,7 +340,6 @@ export default function MyBookings() {
 
                   <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-gray-700">
                     
-                    {/* THE FIX: Unlocked cancellation so users can cancel EVEN IF the payment is done! */}
                     {(booking.bookingStatus === "PENDING" || booking.bookingStatus === "CONFIRMED") && !isPast && (
                       <button onClick={() => handleInitiateCancel(booking.id)} className="text-gray-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg font-semibold transition-colors">Cancel Booking</button>
                     )}
