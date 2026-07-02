@@ -15,7 +15,9 @@ export default function MyBookings() {
   const [selectedBookingForReview, setSelectedBookingForReview] = useState(null);
   
   const [reviewedIds, setReviewedIds] = useState(() => JSON.parse(localStorage.getItem("nearEaseReviewedBookings") || "[]"));
-  const [hiddenIds, setHiddenIds] = useState(() => JSON.parse(localStorage.getItem("hiddenCustomerBookings") || "[]"));
+  
+  // THE FIX: Changed to _v3 to permanently destroy corrupted local storage ghost memory!
+  const [hiddenIds, setHiddenIds] = useState(() => JSON.parse(localStorage.getItem("nearEaseHiddenCustomer_v3") || "[]"));
 
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
   const [cancelOtp, setCancelOtp] = useState("");
@@ -205,10 +207,10 @@ export default function MyBookings() {
   };
 
   const handleDeleteCard = (id) => {
-    if(window.confirm("Are you sure you want to delete this booking from your view?")) {
+    if(window.confirm("Are you sure you want to remove this booking from your view?")) {
       const updated = [...hiddenIds, id];
       setHiddenIds(updated);
-      localStorage.setItem("hiddenCustomerBookings", JSON.stringify(updated));
+      localStorage.setItem("nearEaseHiddenCustomer_v3", JSON.stringify(updated));
     }
   };
 
@@ -219,7 +221,6 @@ export default function MyBookings() {
     setReviewModalOpen(false);
   };
 
-  // THE FIX: Define terminal states. Active bookings will ALWAYS be visible, ignoring localStorage traps.
   const isTerminalState = (status) => ["COMPLETED", "CANCELLED", "CANCELLED_BY_PROVIDER", "REJECTED"].includes(status);
   const visibleBookings = bookings.filter(b => !hiddenIds.includes(b.id) || !isTerminalState(b.bookingStatus));
 
@@ -252,7 +253,6 @@ export default function MyBookings() {
             return (
               <div key={booking.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md relative group">
                 
-                {/* THE FIX: Only allow deletion if the booking is finished/terminal */}
                 {isTerminalState(booking.bookingStatus) && (
                   <button onClick={() => handleDeleteCard(booking.id)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors p-2 bg-white/80 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 shadow-sm z-10" title="Remove from view">
                     <Trash2 size={18} />
@@ -293,20 +293,29 @@ export default function MyBookings() {
                   </div>
                 )}
 
-                {booking.bookingStatus === "REJECTED" && (
-                  <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
-                    <XCircle size={16} /> Your request has been rejected by the provider.
+                {/* --- CANCELLATION AND REFUND BANNERS --- */}
+                {booking.paymentStatus === "REFUNDED" ? (
+                  <div className="bg-purple-50 text-purple-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-purple-100">
+                    <CheckCircle size={16} /> This booking was cancelled and your payment has been fully refunded.
                   </div>
-                )}
-                {booking.bookingStatus === "CANCELLED" && (
-                  <div className="bg-gray-100 text-gray-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-gray-200">
-                    <AlertCircle size={16} /> This booking was cancelled.
-                  </div>
-                )}
-                {booking.bookingStatus === "CANCELLED_BY_PROVIDER" && (
-                  <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
-                    <XCircle size={16} /> The provider has cancelled this confirmed booking.
-                  </div>
+                ) : (
+                  <>
+                    {booking.bookingStatus === "REJECTED" && (
+                      <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
+                        <XCircle size={16} /> Your request has been rejected by the provider.
+                      </div>
+                    )}
+                    {booking.bookingStatus === "CANCELLED" && (
+                      <div className="bg-gray-100 text-gray-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-gray-200">
+                        <AlertCircle size={16} /> This booking was cancelled.
+                      </div>
+                    )}
+                    {booking.bookingStatus === "CANCELLED_BY_PROVIDER" && (
+                      <div className="bg-red-50 text-red-800 px-6 py-3 font-medium text-sm flex items-center gap-2 border-b border-red-100">
+                        <XCircle size={16} /> The provider has cancelled this confirmed booking.
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="p-6">

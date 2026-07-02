@@ -16,7 +16,8 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(defaultOpenAddService);
   
-  const [hiddenIds, setHiddenIds] = useState(() => JSON.parse(localStorage.getItem("hiddenProviderBookings") || "[]"));
+  // THE FIX: Changed to _v3 to permanently destroy corrupted local storage ghost memory!
+  const [hiddenIds, setHiddenIds] = useState(() => JSON.parse(localStorage.getItem("nearEaseHiddenProvider_v3") || "[]"));
   
   const [completingJobId, setCompletingJobId] = useState(null);
   const [otpCode, setOtpCode] = useState("");
@@ -99,9 +100,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
   };
 
   const handleDeleteCard = (id) => {
-    const newHidden = [...hiddenIds, id];
-    setHiddenIds(newHidden);
-    localStorage.setItem("hiddenProviderBookings", JSON.stringify(newHidden));
+    if(window.confirm("Are you sure you want to remove this booking from your view?")) {
+      const newHidden = [...hiddenIds, id];
+      setHiddenIds(newHidden);
+      localStorage.setItem("nearEaseHiddenProvider_v3", JSON.stringify(newHidden));
+    }
   };
 
   const handleEditSubmit = async () => {
@@ -143,9 +146,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
     setEditFile(null);
   };
 
-  // THE FIX: Define terminal states. Active bookings will ALWAYS be visible, ignoring localStorage traps.
   const isTerminalState = (status) => ["COMPLETED", "CANCELLED", "CANCELLED_BY_PROVIDER", "REJECTED"].includes(status);
   const visibleRequests = requests.filter(r => !hiddenIds.includes(r.id) || !isTerminalState(r.bookingStatus));
+
+  // The Fix: Count terminal jobs natively from the state to make sure the tab counter matches exactly!
+  const terminalJobsCount = visibleRequests.filter(r => isTerminalState(r.bookingStatus)).length;
 
   if (isLoading) return <div className="flex justify-center items-center min-h-[60vh]"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>;
 
@@ -183,12 +188,13 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
           </div>
         </div>
         
+        {/* THE FIX: Renamed from "Completed Jobs" to "Job History" so users know where cancelled jobs go */}
         <div onClick={() => setActiveTab("completed")} className={`p-6 rounded-2xl border transition-all cursor-pointer dark:bg-gray-800 hover:shadow-md ${activeTab === "completed" ? "border-blue-500 shadow-md ring-2 ring-blue-100 bg-blue-50/30 dark:bg-blue-900/10" : "border-gray-100 dark:border-gray-700 bg-white"}`}>
           <div className="flex flex-col gap-3">
             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><CheckCircle size={24} /></div>
             <div>
-              <p className="text-sm font-bold text-gray-500">Completed Jobs</p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white">{dashboardData?.completedJobs || 0}</h3>
+              <p className="text-sm font-bold text-gray-500">Job History</p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white">{terminalJobsCount}</h3>
             </div>
           </div>
         </div>
@@ -405,11 +411,11 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
         <div className="space-y-6 animate-in fade-in">
           <h2 className="text-xl font-bold dark:text-white">{activeTab === "completed" ? "Job History" : "Active Service Requests"}</h2>
           
-          {visibleRequests.filter(job => activeTab === "completed" ? job.bookingStatus === "COMPLETED" : job.bookingStatus !== "COMPLETED").length === 0 ? (
+          {visibleRequests.filter(job => activeTab === "completed" ? isTerminalState(job.bookingStatus) : !isTerminalState(job.bookingStatus)).length === 0 ? (
             <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700"><Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" /><p className="text-gray-500">No requests to display.</p></div>
           ) : (
             visibleRequests
-              .filter(job => activeTab === "completed" ? job.bookingStatus === "COMPLETED" : job.bookingStatus !== "COMPLETED")
+              .filter(job => activeTab === "completed" ? isTerminalState(job.bookingStatus) : !isTerminalState(job.bookingStatus))
               .map((job) => {
                 const note = job.CostumerRequest || job.customerRequest || job.note;
                 const providerCost = job.price || job.serviceOffering?.price || 0;
@@ -417,9 +423,8 @@ export default function ProviderDashboard({ defaultOpenAddService = false }) {
                 return (
                 <div key={job.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 relative">
                   
-                  {/* THE FIX: Only allow deletion if the booking is finished/terminal */}
                   {isTerminalState(job.bookingStatus) && (
-                    <button onClick={() => handleDeleteCard(job.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-full shadow-sm cursor-pointer" title="Delete from dashboard">
+                    <button onClick={() => handleDeleteCard(job.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 transition-colors p-2 bg-red-50 hover:bg-red-100 rounded-full shadow-sm cursor-pointer" title="Remove from view">
                       <Trash2 size={18} />
                     </button>
                   )}
