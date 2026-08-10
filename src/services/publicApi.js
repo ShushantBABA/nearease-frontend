@@ -70,7 +70,7 @@ export const PublicAPI = {
   // --- ELASTIC SEARCH IMPLEMENTATION ---
   searchServices: async (searchPayload) => {
     try {
-      const response = await fetch(`${BASE_URL}/api/public/services/search`, {
+      const response = await fetch(`${BASE_URL}/api/services/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
