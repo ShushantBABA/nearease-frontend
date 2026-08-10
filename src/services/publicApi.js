@@ -65,5 +65,23 @@ export const PublicAPI = {
       console.error("Error in getProviderReviews:", error);
       return [];
     }
+  },
+
+  // --- ELASTIC SEARCH IMPLEMENTATION ---
+  searchServices: async (searchPayload) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/public/services/search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(searchPayload),
+      });
+      if (!response.ok) throw new Error("Failed to search services via Elastic Search");
+      return await response.json();
+    } catch (error) {
+      console.error("Error in searchServices:", error);
+      return [];
+    }
   }
 };

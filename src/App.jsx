@@ -142,11 +142,24 @@ export default function App() {
     fetchSubCats();
   }, [activeMainCategory]);
 
+  // =======================================================
+  // --- ELASTIC SEARCH IMPLEMENTATION ---
+  // =======================================================
   useEffect(() => {
     const fetchListings = async () => {
       setIsLoadingData(true);
       try {
-        const data = await PublicAPI.getAllOfferings();
+        // Map frontend state to backend ServiceSearchRequestDto
+        const searchPayload = {};
+        if (search.trim() !== "") searchPayload.searchKeyword = search;
+        if (activeMainCategory !== "All") searchPayload.category = activeMainCategory;
+
+        // Ensure you add `searchServices` to your `PublicAPI` file to hit the new ES endpoint.
+        // Fallback to `getAllOfferings` if `searchServices` isn't linked yet.
+        const data = await (PublicAPI.searchServices 
+            ? PublicAPI.searchServices(searchPayload) 
+            : PublicAPI.getAllOfferings());
+
         setListings(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Failed to fetch listings:", error);
@@ -157,9 +170,15 @@ export default function App() {
     };
 
     if (activePage === "home") {
-      fetchListings();
+      // Debounce to prevent spamming the ES backend on every keystroke
+      const delayDebounceFn = setTimeout(() => {
+        fetchListings();
+      }, 400);
+      
+      return () => clearTimeout(delayDebounceFn);
     }
-  }, [activePage]); 
+  }, [activePage, search, activeMainCategory]); 
+  // Dependency array includes search and activeMainCategory to trigger auto-fetch
 
   const scrollToContent = () => {
     if (mainContentRef.current) {
@@ -171,28 +190,21 @@ export default function App() {
   };
 
   const filteredListings = listings.filter((item) => {
-    const itemName = item?.name || item?.serviceTypename || item?.serviceType?.name || ""; 
-    const matchesSearch = itemName.toLowerCase().includes(search.toLowerCase());
+    // --- ELASTIC SEARCH MODIFICATION ---
+    // 'searchKeyword' and 'mainCategory' are now handled server-side by Elastic Search.
+    // We only need to handle 'location' and 'subCategory' locally here.
 
     const itemLoc = item?.location || item?.provider?.address || "";
     const matchesLoc = itemLoc ? itemLoc.toLowerCase().includes(location.toLowerCase()) : true;
     
-    let matchesCategory = true;
+    let matchesSubCategory = true;
     
-    if (activeMainCategory !== "All") {
+    if (activeMainCategory !== "All" && activeSubCategory) {
       const itemSubCat = (item?.serviceTypename || item?.serviceType?.name || "").toLowerCase();
-      const itemMainCat = (item?.categoryName || item?.serviceType?.category?.name || "").toLowerCase();
-      const targetMainCat = activeMainCategory.toLowerCase();
-
-      if (activeSubCategory) {
-        matchesCategory = (itemSubCat === activeSubCategory.name.toLowerCase());
-      } else {
-        const validSubCatsForThisCategory = subCategories.map(s => (s.name || "").toLowerCase());
-        matchesCategory = validSubCatsForThisCategory.includes(itemSubCat) || (itemMainCat === targetMainCat);
-      }
+      matchesSubCategory = (itemSubCat === activeSubCategory.name.toLowerCase());
     }
     
-    return matchesSearch && matchesLoc && matchesCategory;
+    return matchesLoc && matchesSubCategory;
   });
 
   const handleLogout = () => { 
@@ -227,20 +239,16 @@ export default function App() {
       <div className="flex-grow">
         {activePage === "home" ? (
           <>
-            {/* THE FIX 2: Replaced static px-4 with px-4 sm:px-6 lg:px-8 to perfectly flush align with Main Content below */}
             <div className="relative bg-white dark:bg-gray-900 overflow-hidden pb-32 md:pt-15 md:pb-40 px-4 sm:px-6 lg:px-8 transition-colors duration-300 z-10 border-b border-gray-100 dark:border-gray-800/50">
               
               {/* Background Mesh Gradients */}
               <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                 {/* Modern Architectural Grid (Visible only in Light Mode) */}
                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808015_1px,transparent_1px),linear-gradient(to_bottom,#80808015_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,#000_70%,transparent_100%)] dark:opacity-0"></div>
 
-                 {/* Glowing Orbs (Tuned for both Light and Dark modes) */}
                  <div className="w-[600px] h-[600px] bg-indigo-300/40 dark:bg-indigo-600/20 blur-[100px] md:blur-[120px] rounded-full absolute -top-20 -left-20 animate-pulse-slow mix-blend-multiply dark:mix-blend-normal"></div>
                  
                  <div className="w-[500px] h-[500px] bg-purple-300/40 dark:bg-purple-600/20 blur-[90px] md:blur-[100px] rounded-full absolute top-20 right-0 animate-pulse-slow mix-blend-multiply dark:mix-blend-normal" style={{ animationDelay: '2s'}}></div>
                  
-                 {/* Extra subtle pink orb just for Light Mode depth */}
                  <div className="w-[400px] h-[400px] bg-pink-200/50 dark:bg-transparent blur-[100px] rounded-full absolute top-40 left-1/3 animate-pulse-slow mix-blend-multiply dark:mix-blend-normal" style={{ animationDelay: '4s'}}></div>
               </div>
 
@@ -265,9 +273,6 @@ export default function App() {
                       Explore Services 
                       <ArrowDownCircle size={22} className="group-hover:translate-y-1 transition-transform" />
                     </button>
-                    {/* <button onClick={() => setAuthModalView("register")} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 font-bold py-4 px-8 rounded-full shadow-sm transition-all transform hover:-translate-y-1 cursor-pointer text-lg flex items-center justify-center text-center">
-                      Join as a Professional
-                    </button> */}
                   </div>
                 </div>
 
@@ -282,20 +287,12 @@ export default function App() {
                     />
                   ))}
                   
-                  {/* Subtle Image Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-20 pointer-events-none"></div>
 
-                  {/* Floating Trust Badge */}
                   <div className="absolute bottom-8 left-8 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 flex items-center gap-4 z-30 animate-in slide-in-from-bottom-10 fade-in duration-1000 delay-300 transform group-hover:-translate-y-2 transition-transform">
                      <div className="w-7 h-7 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
                        <ShieldCheck size={24} /> 
                      </div>
-                     {/* <div>
-                       <p className="text-sm font-bold text-gray-900 dark:text-white">100% Verified</p>
-                       <div className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                         <Star size={12} className="fill-yellow-400 text-yellow-400" /> 4.9/5 Average Rating
-                       </div>
-                     </div> */}
                   </div>
                 </div>
 
@@ -304,7 +301,6 @@ export default function App() {
 
             <main ref={mainContentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 relative">
               
-              {/* THE FIX 3: Added w-full to the floating search bar so it respects container width dynamically */}
               <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-2 md:p-3 rounded-3xl md:rounded-full flex flex-col md:flex-row items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-100 dark:border-gray-700 w-full max-w-4xl mx-auto -mt-16 relative z-30 mb-16 transform transition-all hover:shadow-[0_8px_40px_rgb(0,0,0,0.12)]">
                   <div className="flex items-center px-6 py-4 flex-1 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 w-full group">
                     <MapPin size={22} className="text-indigo-500 mr-3 shrink-0 group-hover:scale-110 transition-transform" />
